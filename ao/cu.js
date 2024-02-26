@@ -8,8 +8,9 @@ const {
   createData,
 } = require("arbundles")
 const { parse } = require("./utils")
+const Base = require("./base")
 
-class CU {
+class CU extends Base {
   constructor(
     port = 1987,
     arweave = {
@@ -18,21 +19,9 @@ class CU {
       protocol: "http",
     },
   ) {
-    this.txmap = {}
-    this.pmap = {}
-    this.processes = {}
-    this.port = port
-    this.server = express()
-    this.server.use(express.raw())
-    this.arweave = Arweave.init(arweave)
+    super(port, arweave, "CU")
     this.state = 0
   }
-  async genWallet() {
-    this.wallet = await this.arweave.wallets.generate()
-    const addr = await this.arweave.wallets.jwkToAddress(this.wallet)
-    await this.arweave.api.get(`mint/${addr}/10000000000000000`)
-  }
-
   async getModule(txid) {
     const data = await this.arweave.transactions.getData(txid, { decode: true })
     const { instance } = await WebAssembly.instantiate(data, {
@@ -68,12 +57,7 @@ class CU {
       }
       res.json({ state: ext() })
     })
-    this.app = this.server.listen(this.port, () =>
-      console.log(`CU on port ${this.port}`),
-    )
-  }
-  stop() {
-    this.app.close()
+    this.start()
   }
 }
 
