@@ -1,0 +1,18 @@
+{
+  "name": "aotest",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "yarn mocha"
+  },
+  "dependencies": {
+    "@permaweb/aoconnect": "^0.0.43",
+    "arbundles": "^0.11.0",
+    "arlocal": "^1.1.65",
+    "arweave": "^1.14.4",
+    "chai": "4",
+    "express": "^4.18.2",
+    "mocha": "^10.3.0"
+  }
+}
