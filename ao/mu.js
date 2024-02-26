@@ -8,7 +8,9 @@ const {
   createData,
 } = require("arbundles")
 
-class MU {
+const Base = require("./base")
+
+class MU extends Base {
   constructor(
     port = 1985,
     arweave = {
@@ -17,15 +19,7 @@ class MU {
       protocol: "http",
     },
   ) {
-    this.port = port
-    this.server = express()
-    this.server.use(express.raw())
-    this.arweave = Arweave.init(arweave)
-  }
-  async genWallet() {
-    this.wallet = await this.arweave.wallets.generate()
-    const addr = await this.arweave.wallets.jwkToAddress(this.wallet)
-    await this.arweave.api.get(`mint/${addr}/10000000000000000`)
+    super(port, arweave, "MU")
   }
   async init() {
     await this.genWallet()
@@ -45,12 +39,7 @@ class MU {
       }).then(r => r.json())
       res.json({ id })
     })
-    this.app = this.server.listen(this.port, () =>
-      console.log(`MU on port ${this.port}`),
-    )
-  }
-  stop() {
-    this.app.close()
+    this.start()
   }
 }
 
