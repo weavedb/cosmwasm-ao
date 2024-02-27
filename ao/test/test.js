@@ -7,7 +7,7 @@ const getModule = async () =>
   readFileSync(
     resolve(
       __dirname,
-      "../module/target/wasm32-unknown-unknown/release/aotest.wasm",
+      "../modules/bare-wasm/target/wasm32-unknown-unknown/release/aotest.wasm",
     ),
   )
 

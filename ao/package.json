@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@permaweb/aoconnect": "^0.0.43",
+    "@terran-one/cosmwasm-vm-js": "^0.2.16",
     "arbundles": "^0.11.0",
     "arlocal": "^1.1.65",
     "arweave": "^1.14.4",
