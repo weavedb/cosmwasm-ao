@@ -4,9 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "yarn mocha"
-  },
-  "scripts": {
+    "test": "yarn mocha",
     "start": "node scripts/start.js"
   },
   "dependencies": {

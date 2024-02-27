@@ -24,6 +24,56 @@ yarn start
 ```
 
 - Arweave Testnet (ArLocal) : [http://localhost:1984](http://localhost:1984)
-- Messenger (MU) : [http://localhost:1985](http://localhost:1985)
-- Scheduler (MU) : [http://localhost:1986](http://localhost:1986)
-- Compute (CU) : [http://localhost:1987](http://localhost:1987)
+- Messenger Unit (MU) : [http://localhost:1985](http://localhost:1985)
+- Scheduler Unit (SU) : [http://localhost:1986](http://localhost:1986)
+- Compute Unit (CU) : [http://localhost:1987](http://localhost:1987)
+
+## Write CosmWasm Contract
+Follow this [tutorial](https://book.cosmwasm.com/basics/rust-project.html) to write some CosmWasm contracts.
+
+And compile it with the following command.
+
+```bash
+cargo build --target wasm32-unknown-unknown --release
+```
+The binary file to deploy will be at `target/wasm32-unknown-unknown/release/project_name.wasm`.
+ 
+## CosmWasm AO SDK
+
+### Installing SDK
+
+```bash
+yarn add cwao
+```
+
+### Using SDK in Node Script
+
+```javascript
+const CWAO = require("cwao")
+
+// wallet = Arweave wallet jwk loaded with enough $AR
+const cwao = new CWAO({ wallet })
+
+// get module binary
+const module_binary = require("fs").readFileSync(module_binary_file_path)
+
+// deploy contract (module = CosmWasm contract binary)
+const module_txid = await cwao.deploy(module_binary)
+
+// get scheduler address for the process
+const scheduler_address = await cwao.arweave.wallets.jwkToAddress(wallet)
+
+// instantiate contract
+const process = await cwao.instantiate({
+  Module: module_txid,
+  Scheduler: scheduler_address,
+  input: { num: 1 },
+})
+
+// execute contract
+await cwao.execute({ Process: process.id, func: "Add", input: { num: 2 } })
+
+// query contract
+const state = await cwao.query(process.id)
+
+```
