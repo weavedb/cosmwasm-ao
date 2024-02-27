@@ -15,3 +15,15 @@ CosmWasm is [actor model smart contract](https://book.cosmwasm.com/actor-model.h
 ## Set up Local Nodes
 
 To test it out, [ArLocal](https://github.com/textury/arlocal) and 3 [AO units](https://cookbook_ao.g8way.io/concepts/units.html) (MU, CU, SU) need to be running locally.
+
+```bash
+git clone https://github.com/weavedb/weavechain.git
+cd weavechain/ao
+yarn
+yarn start
+```
+
+- Arweave Testnet (ArLocal) : [http://localhost:1984](http://localhost:1984)
+- Messenger (MU) : [http://localhost:1985](http://localhost:1985)
+- Scheduler (MU) : [http://localhost:1986](http://localhost:1986)
+- Compute (CU) : [http://localhost:1987](http://localhost:1987)
