@@ -6,6 +6,9 @@
   "scripts": {
     "test": "yarn mocha"
   },
+  "scripts": {
+    "start": "node scripts/start.js"
+  },
   "dependencies": {
     "@permaweb/aoconnect": "^0.0.43",
     "@terran-one/cosmwasm-vm-js": "^0.2.16",
