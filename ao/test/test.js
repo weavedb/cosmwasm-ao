@@ -1,5 +1,6 @@
 const { expect } = require("chai")
 const WDB = require("../wdb")
+const CWAO = require("../../sdk")
 const { start } = require("../test-utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
@@ -52,22 +53,22 @@ describe("WDB", function () {
     expect(await wdb.getState(pr.id)).to.eql(6)
   })
 
-  it("should handle bare cosmwasm", async () => {
+  it.only("should handle bare cosmwasm", async () => {
     const _binary = await getModule(
       "cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
     )
-    const wdb = new WDB({ wallet, arweave })
-    const mod_id = await wdb.addModule(_binary)
+    const cwao = new CWAO({ wallet })
+    const mod_id = await cwao.deploy(_binary)
     const sch = await arweave.wallets.jwkToAddress(wallet)
-    const pr = await wdb.addProcess({
+    const pr = await cwao.instantiate({
       Module: mod_id,
       Scheduler: sch,
       input: { num: 4 },
     })
-    await wdb.addMessageCW({ Process: pr.id, func: "Add", input: { num: 1 } })
-    await wdb.addMessageCW({ Process: pr.id, func: "Add", input: { num: 2 } })
-    await wdb.addMessageCW({ Process: pr.id, func: "Add", input: { num: 3 } })
-    expect(await wdb.getState(pr.id)).to.eql(10)
+    await cwao.execute({ Process: pr.id, func: "Add", input: { num: 1 } })
+    await cwao.execute({ Process: pr.id, func: "Add", input: { num: 2 } })
+    await cwao.execute({ Process: pr.id, func: "Add", input: { num: 3 } })
+    expect(await cwao.query(pr.id)).to.eql(10)
     await arLocal.stop()
   })
 })
