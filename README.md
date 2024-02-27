@@ -36,8 +36,14 @@ And compile it with the following command.
 ```bash
 cargo build --target wasm32-unknown-unknown --release
 ```
-The binary file to deploy will be at `target/wasm32-unknown-unknown/release/project_name.wasm`.
- 
+### Sample Contract
+
+```bash
+cd weavechain/modules/cosmwasm
+cargo build --target wasm32-unknown-unknown --release
+```
+The binary file to deploy will be at `target/wasm32-unknown-unknown/release/contract.wasm`.
+
 ## CosmWasm AO SDK
 
 ### Installing SDK
