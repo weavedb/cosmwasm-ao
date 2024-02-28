@@ -28,10 +28,13 @@ class SU extends Base {
   async init() {
     await this.genWallet()
     this.server.post("/", async (req, res) => {
-      const tx = await this.arweave.createTransaction({ data: req.body })
-      await this.arweave.transactions.sign(tx, this.wallet)
+      const tx = await this.arweave.createTransaction({
+        data: req.body,
+      })
+      let ids = []
       for (let v of new Bundle(req.body).items) {
         this.txmap[v.id] = tx.id
+        ids.push(v.id)
         const m = parse(v.tags)
         if (m.type === "Message") {
           if (!this.pmap[v.target]) this.pmap[v.target] = []
@@ -44,8 +47,10 @@ class SU extends Base {
           this.processes[v.id] = { id: v.id, tx: Date.now(), process: v }
         }
       }
-      const uploader = await this.arweave.transactions.getUploader(tx)
-      while (!uploader.isComplete) await uploader.uploadChunk()
+      tx.addTag("Bundle-Format", "binary")
+      tx.addTag("Bundle-Version", "2.0.0")
+      await this.arweave.transactions.sign(tx, this.wallet)
+      await this.arweave.transactions.post(tx)
       res.json({ id: tx.id })
     })
     this.server.get("/:process", async (req, res) => {

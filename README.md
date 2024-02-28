@@ -6,7 +6,7 @@ WeaveChain is a [CosmWasm](https://cosmwasm.com/)-based smartcontract network on
 
 AO is a hyper parallel computation protocol on top of [Arweave](https://arweave.org/). It runs any number of Wasm-based smart contract processes in parallel with [actor model](https://en.wikipedia.org/wiki/Actor_model) messaging mechanism.
 
-- [AO Specification](https://hackmd.io/@YTnQkIXiSgyoU2Gnfq6BGg/r1Y3oDrda#About-this-Specification)
+- [AO Specification](https://ao.arweave.dev/#/spec)
 
 ## Actor Model
 
