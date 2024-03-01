@@ -60,14 +60,15 @@ describe("WDB", function () {
     const cwao = new CWAO({ wallet })
     const mod_id = await cwao.deploy(_binary)
     const sch = await arweave.wallets.jwkToAddress(wallet)
+    await cwao.addScheduler({ url: "http://localhost:1986" })
     const pr = await cwao.instantiate({
-      Module: mod_id,
-      Scheduler: sch,
+      module: mod_id,
+      scheduler: sch,
       input: { num: 4 },
     })
-    await cwao.execute({ Process: pr.id, func: "Add", input: { num: 1 } })
-    await cwao.execute({ Process: pr.id, func: "Add", input: { num: 2 } })
-    await cwao.execute({ Process: pr.id, func: "Add", input: { num: 3 } })
+    await cwao.execute({ process: pr.id, func: "Add", input: { num: 1 } })
+    await cwao.execute({ process: pr.id, func: "Add", input: { num: 2 } })
+    await cwao.execute({ process: pr.id, func: "Add", input: { num: 3 } })
     expect(await cwao.query(pr.id)).to.eql(10)
     await arLocal.stop()
   })

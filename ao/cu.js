@@ -13,7 +13,7 @@ const {
   bundleAndSignData,
   createData,
 } = require("arbundles")
-const { parse } = require("./utils")
+const { getSUByProcess, parse } = require("./utils")
 const Base = require("./base")
 
 class CU extends Base {
@@ -24,8 +24,9 @@ class CU extends Base {
       port: 1984,
       protocol: "http",
     },
+    graphql = "http://localhost:1984/graphql",
   ) {
-    super(port, arweave, "CU")
+    super(port, arweave, graphql, "CU")
     this.store = {}
   }
   async getModule(txid, pr_id) {
@@ -60,18 +61,13 @@ class CU extends Base {
     await this.genWallet()
     this.server.get("/state/:process", async (req, res) => {
       const pr_id = req.params["process"]
+      const url = await getSUByProcess(pr_id, this.graphql)
       const process = parse(
-        (
-          await fetch(`http://localhost:1986/processes/${pr_id}`).then(r =>
-            r.json(),
-          )
-        ).tags,
+        (await fetch(`${url}/processes/${pr_id}`).then(r => r.json())).tags,
       )
       if (process.protocol === "wdb-bare") {
         const { ext, add } = await this.getModule(process.module, pr_id)
-        const pmap = (
-          await fetch(`http://localhost:1986/${pr_id}`).then(r => r.json())
-        ).edges
+        const pmap = (await fetch(`${url}/${pr_id}`).then(r => r.json())).edges
         this.store[pr_id] = 0
         for (let v of pmap) {
           const tags = parse(v.node.message.tags)
@@ -97,9 +93,7 @@ class CU extends Base {
           funds: [],
         }
         vm.instantiate(env, info, initial_input)
-        const pmap = (
-          await fetch(`http://localhost:1986/${pr_id}`).then(r => r.json())
-        ).edges
+        const pmap = (await fetch(`${url}/${pr_id}`).then(r => r.json())).edges
         for (let v of pmap) {
           const tags = parse(v.node.message.tags)
           const input = JSON.parse(tags.input)

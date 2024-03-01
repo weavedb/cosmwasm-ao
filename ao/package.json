@@ -8,6 +8,7 @@
     "start": "node scripts/start.js"
   },
   "dependencies": {
+    "@permaweb/ao-scheduler-utils": "^0.0.10",
     "@permaweb/aoconnect": "^0.0.43",
     "@terran-one/cosmwasm-vm-js": "^0.2.16",
     "arbundles": "^0.11.0",

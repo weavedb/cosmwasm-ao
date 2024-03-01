@@ -19,8 +19,9 @@ class SU extends Base {
       port: 1984,
       protocol: "http",
     },
+    graphql = "http://localhost:1984/graphql",
   ) {
-    super(port, arweave, "SU")
+    super(port, arweave, graphql, "SU")
     this.txmap = {}
     this.pmap = {}
     this.processes = {}

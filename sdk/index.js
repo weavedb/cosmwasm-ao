@@ -1,5 +1,11 @@
-const { ArweaveSigner, createData } = require("arbundles")
 const Arweave = require("arweave")
+const {
+  Bundle,
+  DataItem,
+  ArweaveSigner,
+  bundleAndSignData,
+  createData,
+} = require("arbundles")
 
 class CWAO {
   constructor({
@@ -31,23 +37,48 @@ class CWAO {
     ],
   ) {
     const tx = await this.arweave.createTransaction({ data: mod })
+    const signer = new ArweaveSigner(this.wallet)
+    const pr = createData(mod, signer, { tags })
     for (let v of tags) tx.addTag(v.name, v.value)
     await this.arweave.transactions.sign(tx, this.wallet)
-    const uploader = await this.arweave.transactions.getUploader(tx)
-    while (!uploader.isComplete) await uploader.uploadChunk()
+    await this.arweave.transactions.post(tx)
     console.log("Module uploaded:", tx.id)
     return tx.id
   }
+
+  async addScheduler({
+    url,
+    ttl = 1000 * 60 * 60,
+    tags = [
+      { name: "Data-Protocol", value: "wdb" },
+      { name: "Variant", value: "wdb.TN.1" },
+      { name: "Type", value: "Scheduler-Location" },
+    ],
+  }) {
+    tags.push({ name: "Url", value: url })
+    tags.push({ name: "Time-To-Live", value: Number(ttl).toString() })
+    const signer = new ArweaveSigner(this.wallet)
+    const pr = createData("", signer, { tags })
+    const bundle = await bundleAndSignData([pr], signer)
+    const tx = await this.arweave.createTransaction({ data: bundle.getRaw() })
+    tx.addTag("Bundle-Format", "binary")
+    tx.addTag("Bundle-Version", "2.0.0")
+    const id = bundle.getIds()[0]
+    await this.arweave.transactions.sign(tx, this.wallet)
+    await this.arweave.transactions.post(tx)
+    console.log("Scheculer uploaded:", tx.id)
+    return tx.id
+  }
   async instantiate({
-    Module,
-    Scheduler,
+    module,
+    scheduler,
     input,
     tags = [
       { name: "Data-Protocol", value: "wdb" },
       { name: "Variant", value: "wdb.TN.1" },
       { name: "Type", value: "Process" },
-      { name: "Module", value: Module },
-      { name: "Scheduler", value: Scheduler },
+      { name: "Module", value: module },
+      { name: "Scheduler", value: scheduler },
     ],
   }) {
     if (input) {
@@ -65,10 +96,10 @@ class CWAO {
       body: pr.getRaw(),
     }).then(r => r.json())
   }
-  async execute({ Process, func, input }) {
+  async execute({ process, func, input }) {
     const signer = new ArweaveSigner(this.wallet)
     const pr = createData("", signer, {
-      target: Process,
+      target: process,
       tags: [
         { name: "Data-Protocol", value: "wdb" },
         { name: "Variant", value: "wdb.TN.1" },
