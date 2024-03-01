@@ -2,7 +2,8 @@ const express = require("express")
 const Arweave = require("arweave")
 
 class Base {
-  constructor(port, arweave, type) {
+  constructor(port, arweave, graphql, type) {
+    this.graphql = graphql
     this.type = type
     this.port = port
     this.arweave = Arweave.init(arweave)

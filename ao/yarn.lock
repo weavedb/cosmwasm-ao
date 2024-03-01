@@ -628,7 +628,7 @@
     mkdirp "^1.0.4"
     rimraf "^3.0.2"
 
-"@permaweb/ao-scheduler-utils@~0.0.7":
+"@permaweb/ao-scheduler-utils@^0.0.10", "@permaweb/ao-scheduler-utils@~0.0.7":
   version "0.0.10"
   resolved "https://registry.yarnpkg.com/@permaweb/ao-scheduler-utils/-/ao-scheduler-utils-0.0.10.tgz#cdf59f9591ede3cef83149b6f23ee64d60663411"
   integrity sha512-PuPx7b+m3VLoxIE0/Xu5d0bxkQPeWULug6V1QQ/lIIOl+NdAT7QvQC9mHLi1E08BVQh9oZToATg51l7rRF0Bhg==

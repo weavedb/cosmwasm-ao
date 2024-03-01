@@ -7,9 +7,8 @@ const {
   bundleAndSignData,
   createData,
 } = require("arbundles")
-
 const Base = require("./base")
-
+const { getSUByProcess, getSU, parse } = require("./utils")
 class MU extends Base {
   constructor(
     port = 1985,
@@ -18,8 +17,9 @@ class MU extends Base {
       port: 1984,
       protocol: "http",
     },
+    graphql = "http://localhost:1984/graphql",
   ) {
-    super(port, arweave, "MU")
+    super(port, arweave, graphql, "MU")
   }
   async init() {
     await this.genWallet()
@@ -30,7 +30,14 @@ class MU extends Base {
       const tx = await this.arweave.createTransaction({ data: bundle.getRaw() })
       const bd = new Bundle(tx.data)
       const id = bd.getIds()[0]
-      await fetch("http://localhost:1986", {
+      const tags = parse(dataItems[0].tags)
+      let url
+      if (tags.type === "Message") {
+        url = await getSUByProcess(bd.items[0].target, this.graphql)
+      } else if (tags.type === "Process") {
+        url = await getSU(tags.scheduler, this.graphql)
+      }
+      await fetch(url ?? "http://localhost:1986", {
         method: "POST",
         headers: {
           "Content-Type": "application/octet-stream",
