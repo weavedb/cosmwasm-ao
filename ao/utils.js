@@ -61,7 +61,7 @@ const getSU = async (process, graphql) => {
     ).data.transactions.edges
     for (let v of su) {
       if (v.node.owner.address === process) {
-        url = parse(v.node.tags).url
+        url = parse(v.node.tags).url.replace(/\/$/, "")
         break
       }
     }
