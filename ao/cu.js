@@ -34,6 +34,7 @@ class CU extends Base {
     this.vms = {}
     this.last = 0
     this.su = {}
+    this.messages = {}
     this.height = {}
   }
   async getModule(txid, pr_id) {
@@ -64,10 +65,10 @@ class CU extends Base {
   }
   async instantiate(pid) {
     this.su[pid] ??= await getSUByProcess(pid, this.graphql)
-    const process = parse(
-      (await fetch(`${this.su[pid]}/processes/${pid}`).then(r => r.json()))
-        .tags,
+    this.messages[pid] = await fetch(`${this.su[pid]}/processes/${pid}`).then(
+      r => r.json(),
     )
+    const process = parse(this.messages[pid].tags)
     this.vms[pid] = await this.getModuleCW(process.module, pid)
     const initial_input = JSON.parse(process.input)
     this.height[pid] = 1
@@ -111,6 +112,7 @@ class CU extends Base {
       const id = v.node.message.id
       if (this.results[pid][id]) continue
       try {
+        this.messages[v.node.message.id] = v.node.message
         const tags = parse(v.node.message.tags)
         const input = JSON.parse(tags.input)
         const env = {
@@ -125,7 +127,14 @@ class CU extends Base {
           sender: await this.arweave.wallets.jwkToAddress(this.wallet),
           funds: [],
         }
-        const res = this.vms[pid].execute(env, info, { [tags.function]: input })
+        let res = null
+        if (tags.function === "reply") {
+          res = this.vms[pid].reply(env, input)
+        } else {
+          res = this.vms[pid].execute(env, info, {
+            [tags.function]: input,
+          })
+        }
         this.results[pid][id] = res.json
       } catch (e) {
         console.log(e)
@@ -172,19 +181,53 @@ class CU extends Base {
       this.eval(pid, () => {
         let resp = { Messages: [], Spawns: [], Output: [] }
         let qres = this.results[pid][mid]
+        for (let v of qres.ok.attributes) {
+          if (v.key === "action" && v.value === "perform_action") {
+            if (this.messages[mid]) {
+              const tags = parse(this.messages[mid].tags)
+              if (tags.reply_on && tags.reply_on === "success") {
+                let _tags = [
+                  { name: "Data-Protocol", value: "wdb" },
+                  { name: "Variant", value: "wdb.TN.1" },
+                  { name: "Type", value: "Message" },
+                  {
+                    name: "Input",
+                    value: JSON.stringify({
+                      id: Number(tags.reply_id),
+                      result: { ok: { events: [], data: null } },
+                    }),
+                  },
+                  { name: "Function", value: "reply" },
+                  { name: "From-Process", value: pid },
+                ]
+                resp.Messages.push({
+                  Target: tags.from_process,
+                  Tags: _tags,
+                })
+              }
+            }
+          }
+        }
         for (let v of qres.ok.messages) {
           const { contract_addr, funds, msg } = v.msg.wasm.execute
+          const { id, reply_on } = v
           const _msg = JSON.parse(atob(msg))
           for (let k in _msg) {
+            let tags = [
+              { name: "Data-Protocol", value: "wdb" },
+              { name: "Variant", value: "wdb.TN.1" },
+              { name: "Type", value: "Message" },
+              { name: "Input", value: JSON.stringify(_msg[k]) },
+              { name: "Function", value: k },
+              { name: "From-Process", value: pid },
+            ]
+            if (reply_on) {
+              tags.push({ name: "Reply_On", value: reply_on })
+              tags.push({ name: "Reply_Id", value: Number(id).toString() })
+            }
             resp.Messages.push({
               Target: contract_addr,
-              Tags: [
-                { name: "Data-Protocol", value: "wdb" },
-                { name: "Variant", value: "wdb.TN.1" },
-                { name: "Type", value: "Message" },
-                { name: "Input", value: JSON.stringify(_msg[k]) },
-                { name: "Function", value: k },
-              ],
+              Tags: tags,
             })
           }
         }

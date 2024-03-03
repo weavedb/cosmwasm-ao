@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum ExecuteMsg {
     Add { num: u8 },
     Add2 { num: u8, addr: String },
+    Add3 { num: u8, addr: String },
 }
 
 

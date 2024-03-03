@@ -9,6 +9,10 @@ const parse = tags => {
     Input: "input",
     Function: "function",
     Url: "url",
+    Reply_On: "reply_on",
+    Reply_Id: "reply_id",
+    "From-Process": "from_process",
+    "From-Module": "from_module",
   }
   for (let v of tags) {
     if (tmap[v.name]) m[tmap[v.name]] = v.value
