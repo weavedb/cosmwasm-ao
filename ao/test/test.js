@@ -70,15 +70,20 @@ describe("WDB", function () {
       scheduler: sch,
       input: { num: 4 },
     })
+    const pr2 = await cwao.instantiate({
+      module: mod_id,
+      scheduler: sch,
+      input: { num: 1 },
+    })
     await cwao.execute({ process: pr.id, func: "Add", input: { num: 1 } })
-    await cwao.execute({ process: pr.id, func: "Add", input: { num: 2 } })
+    await cwao.execute({ process: pr2.id, func: "Add", input: { num: 2 } })
     await cwao.execute({
       process: pr.id,
       func: "Add2",
-      input: { num: 3, addr: pr.id },
+      input: { num: 3, addr: pr2.id },
     })
     await sleep(100)
-    expect(await cwao.query(pr.id)).to.eql(10)
-    await arLocal.stop()
+    expect(await cwao.query(pr.id)).to.eql(5)
+    expect(await cwao.query(pr2.id)).to.eql(6)
   })
 })
