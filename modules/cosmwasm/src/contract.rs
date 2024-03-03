@@ -1,5 +1,6 @@
+use serde::{Deserialize, Serialize};
 use cosmwasm_std::{
-    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult
+    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg
 };
 use crate::state::NUM;
 use crate::msg::{ NumResp, InstantiateMsg, QueryMsg, ExecuteMsg};
@@ -37,23 +38,35 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     use ExecuteMsg::*;
-
     match msg {
 	Add { num } => exec::add(deps, info, num),
+	Add2 { num, addr } => exec::add2(deps, info, num, addr),
     }
 }
 
 mod exec {
     use cosmwasm_std::StdError;
-
     use super::*;
-
+    use ExecuteMsg::*;
+    
     pub fn add(deps: DepsMut, _info: MessageInfo, num: u8) -> StdResult<Response> {
         NUM.update(deps.storage, move |num2| -> StdResult<_> {
             Ok(num + num2)
         })?;
-
         Ok(Response::new())
     }
     
+    pub fn add2(deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
+	let msg = Add {
+            num: num
+	};
+	let binary_msg: StdResult<Binary> = to_json_binary(&msg);
+	let cosmos_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: addr,
+        msg: binary_msg?,
+        funds: vec![],
+    });
+        Ok(Response::new().add_message(cosmos_msg))
+    }
+
 }

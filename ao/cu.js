@@ -28,6 +28,13 @@ class CU extends Base {
   ) {
     super(port, arweave, graphql, "CU")
     this.store = {}
+    this.ongoing = {}
+    this.subscribe = {}
+    this.results = {}
+    this.vms = {}
+    this.last = 0
+    this.su = {}
+    this.height = {}
   }
   async getModule(txid, pr_id) {
     const data = await this.arweave.transactions.getData(txid, { decode: true })
@@ -53,61 +60,136 @@ class CU extends Base {
     }
     const vm = new VMInstance(backend)
     await vm.build(wasmBytecode)
-
     return vm
   }
-
+  async instantiate(pid) {
+    this.su[pid] ??= await getSUByProcess(pid, this.graphql)
+    const process = parse(
+      (await fetch(`${this.su[pid]}/processes/${pid}`).then(r => r.json()))
+        .tags,
+    )
+    this.vms[pid] = await this.getModuleCW(process.module, pid)
+    const initial_input = JSON.parse(process.input)
+    this.height[pid] = 1
+    const env = {
+      block: {
+        height: this.height[pid]++,
+        time: Number(Date.now()).toString(),
+        chain_id: "wdb",
+      },
+      contract: { address: pid },
+    }
+    const info = {
+      sender: await this.arweave.wallets.jwkToAddress(this.wallet),
+      funds: [],
+    }
+    this.results[pid] ??= {}
+    const result = this.vms[pid].instantiate(env, info, initial_input)
+    this.results[pid][pid] = result.json
+    return result.json
+  }
+  async _eval(pid) {
+    let subscribe = this.subscribe[pid]
+    this.subscribe[pid] = []
+    this.ongoing[pid] = true
+    if (typeof this.vms[pid] === "undefined") await this.instantiate(pid)
+    await this.execute(pid)
+    this.ongoing[pid] = false
+    for (let v of subscribe) v()
+    if (this.subscribe[pid].length > 0) await this._eval(pid)
+  }
+  async eval(pid, cb) {
+    this.ongoing[pid] ??= false
+    this.subscribe[pid] ??= []
+    this.subscribe[pid].push(cb)
+    if (!this.ongoing[pid]) await this._eval(pid)
+  }
+  async execute(pid) {
+    const pmap = (await fetch(`${this.su[pid]}/${pid}`).then(r => r.json()))
+      .edges
+    for (let v of pmap) {
+      const id = v.node.message.id
+      if (this.results[pid][id]) continue
+      try {
+        const tags = parse(v.node.message.tags)
+        const input = JSON.parse(tags.input)
+        const env = {
+          block: {
+            height: this.height[pid]++,
+            time: Number(Date.now()).toString(),
+            chain_id: "wdb",
+          },
+          contract: { address: pid },
+        }
+        const info = {
+          sender: await this.arweave.wallets.jwkToAddress(this.wallet),
+          funds: [],
+        }
+        const res = this.vms[pid].execute(env, info, { [tags.function]: input })
+        this.results[pid][id] = res.json
+      } catch (e) {
+        console.log(e)
+      }
+    }
+  }
   async init() {
     await this.genWallet()
     this.server.get("/state/:process", async (req, res) => {
-      const pr_id = req.params["process"]
-      const url = await getSUByProcess(pr_id, this.graphql)
-      const process = parse(
-        (await fetch(`${url}/processes/${pr_id}`).then(r => r.json())).tags,
-      )
+      const pid = req.params["process"]
       if (process.protocol === "wdb-bare") {
-        const { ext, add } = await this.getModule(process.module, pr_id)
-        const pmap = (await fetch(`${url}/${pr_id}`).then(r => r.json())).edges
-        this.store[pr_id] = 0
+        const url = await getSUByProcess(pid, this.graphql)
+        const process = parse(
+          (await fetch(`${url}/processes/${pid}`).then(r => r.json())).tags,
+        )
+        const { ext, add } = await this.getModule(process.module, pid)
+        const pmap = (await fetch(`${url}/${pid}`).then(r => r.json())).edges
+        this.store[pid] = 0
         for (let v of pmap) {
           const tags = parse(v.node.message.tags)
           add(tags.num * 1)
         }
         res.json({ state: ext() })
       } else {
-        const vm = await this.getModuleCW(process.module, pr_id)
-        const initial_input = JSON.parse(process.input)
-        let height = 1
-        const env = {
-          block: {
-            height: height++,
-            time: Number(Date.now()).toString(),
-            chain_id: "wdb",
-          },
-          contract: {
-            address: "random-contract",
-          },
-        }
-        const info = {
-          sender: "random-sender",
-          funds: [],
-        }
-        vm.instantiate(env, info, initial_input)
-        const pmap = (await fetch(`${url}/${pr_id}`).then(r => r.json())).edges
-        for (let v of pmap) {
-          const tags = parse(v.node.message.tags)
-          const input = JSON.parse(tags.input)
-          vm.execute(env, info, { [tags.function]: input })
-        }
-        let num = JSON.parse(
-          atob(
-            vm.query(env, {
-              Num: {},
-            }).json.ok,
-          ),
-        ).num
-        res.json({ state: num })
+        await this.eval(pid, () => {
+          const env = {
+            block: {
+              height: this.height[pid],
+              time: Number(Date.now()).toString(),
+              chain_id: "wdb",
+            },
+            contract: { address: pid },
+          }
+          let num = JSON.parse(
+            atob(this.vms[pid].query(env, { Num: {} }).json.ok),
+          ).num
+          res.json({ state: num })
+        })
       }
+    })
+    this.server.get("/result/:message", async (req, res) => {
+      const pid = req.query["process-id"]
+      const mid = req.params.message
+      this.eval(pid, () => {
+        let resp = { Messages: [], Spawns: [], Output: [] }
+        let qres = this.results[pid][mid]
+        for (let v of qres.ok.messages) {
+          const { contract_addr, funds, msg } = v.msg.wasm.execute
+          const _msg = JSON.parse(atob(msg))
+          for (let k in _msg) {
+            resp.Messages.push({
+              Target: contract_addr,
+              Tags: [
+                { name: "Data-Protocol", value: "wdb" },
+                { name: "Variant", value: "wdb.TN.1" },
+                { name: "Type", value: "Message" },
+                { name: "Input", value: JSON.stringify(_msg[k]) },
+                { name: "Function", value: k },
+              ],
+            })
+          }
+        }
+        res.json(resp)
+      })
     })
     this.start()
   }

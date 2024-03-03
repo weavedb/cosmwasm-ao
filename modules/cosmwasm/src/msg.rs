@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum ExecuteMsg {
     Add { num: u8 },
+    Add2 { num: u8, addr: String },
 }
 
 

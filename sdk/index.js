@@ -96,6 +96,7 @@ class CWAO {
       body: pr.getRaw(),
     }).then(r => r.json())
   }
+
   async execute({ process, func, input }) {
     const signer = new ArweaveSigner(this.wallet)
     const pr = createData("", signer, {

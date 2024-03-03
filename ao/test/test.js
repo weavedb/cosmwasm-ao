@@ -4,6 +4,10 @@ const CWAO = require("../../sdk")
 const { start } = require("../test-utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
+const sleep = x =>
+  new Promise(res => {
+    setTimeout(() => res(), x)
+  })
 const getModule = async (
   module_path = "bare-wasm/target/wasm32-unknown-unknown/release/aotest.wasm",
 ) => readFileSync(resolve(__dirname, "../../modules/", module_path))
@@ -68,7 +72,12 @@ describe("WDB", function () {
     })
     await cwao.execute({ process: pr.id, func: "Add", input: { num: 1 } })
     await cwao.execute({ process: pr.id, func: "Add", input: { num: 2 } })
-    await cwao.execute({ process: pr.id, func: "Add", input: { num: 3 } })
+    await cwao.execute({
+      process: pr.id,
+      func: "Add2",
+      input: { num: 3, addr: pr.id },
+    })
+    await sleep(100)
     expect(await cwao.query(pr.id)).to.eql(10)
     await arLocal.stop()
   })
