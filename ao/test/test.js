@@ -8,6 +8,7 @@ const sleep = x =>
   new Promise(res => {
     setTimeout(() => res(), x)
   })
+
 const getModule = async (
   module_path = "bare-wasm/target/wasm32-unknown-unknown/release/aotest.wasm",
 ) => readFileSync(resolve(__dirname, "../../modules/", module_path))
@@ -82,8 +83,13 @@ describe("WDB", function () {
       func: "Add2",
       input: { num: 3, addr: pr2.id },
     })
-    await sleep(100)
-    expect(await cwao.query(pr.id)).to.eql(5)
-    expect(await cwao.query(pr2.id)).to.eql(6)
+    await cwao.execute({
+      process: pr.id,
+      func: "Add3",
+      input: { num: 1, addr: pr2.id },
+    })
+    await sleep(500)
+    expect(await cwao.query(pr.id)).to.eql(6)
+    expect(await cwao.query(pr2.id)).to.eql(7)
   })
 })
