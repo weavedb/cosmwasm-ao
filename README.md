@@ -63,11 +63,11 @@ const cwao = new CWAO({ wallet })
 // get module binary
 const module_binary = require("fs").readFileSync(module_binary_file_path)
 
-// assign scheduler unit to wallet address
-await cwao.addScheduler({ url: "http://localhost:1986" })
-
 // deploy contract (module = CosmWasm contract binary)
 const module_txid = await cwao.deploy(module_binary)
+
+// assign scheduler unit to wallet address
+await cwao.addScheduler({ url: "http://localhost:1986" })
 
 // get scheduler address for the process
 const scheduler_address = await cwao.arweave.wallets.jwkToAddress(wallet)
@@ -83,6 +83,6 @@ const process = await cwao.instantiate({
 await cwao.execute({ process: process.id, func: "Add", input: { num: 2 } })
 
 // query contract
-const state = await cwao.query({process:process.id, func: "Num", input: {}})
+const result = await cwao.query({process:process.id, func: "Num", input: {}})
 
 ```
