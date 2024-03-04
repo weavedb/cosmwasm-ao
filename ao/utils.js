@@ -13,6 +13,7 @@ const parse = tags => {
     Reply_Id: "reply_id",
     "From-Process": "from_process",
     "From-Module": "from_module",
+    "Read-Only": "read_only",
   }
   for (let v of tags) {
     if (tmap[v.name]) m[tmap[v.name]] = v.value
