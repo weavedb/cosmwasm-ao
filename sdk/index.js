@@ -7,6 +7,11 @@ const {
   createData,
 } = require("arbundles")
 
+const sleep = x =>
+  new Promise(res => {
+    setTimeout(() => res(), x)
+  })
+
 class CWAO {
   constructor({
     wallet,
@@ -23,6 +28,7 @@ class CWAO {
     this.wallet = wallet
     this.arweave = new Arweave(arweave)
   }
+
   async deploy(
     mod,
     tags = [
@@ -97,17 +103,19 @@ class CWAO {
     }).then(r => r.json())
   }
 
-  async execute({ process, func, input }) {
+  async execute({ process, func, input = {}, query = false }) {
     const signer = new ArweaveSigner(this.wallet)
+    let tags = [
+      { name: "Data-Protocol", value: "wdb" },
+      { name: "Variant", value: "wdb.TN.1" },
+      { name: "Type", value: "Message" },
+      { name: "Input", value: JSON.stringify(input) },
+      { name: "Function", value: func },
+    ]
+    if (query) tags.push({ name: "Read-Only", value: "True" })
     const pr = createData("", signer, {
       target: process,
-      tags: [
-        { name: "Data-Protocol", value: "wdb" },
-        { name: "Variant", value: "wdb.TN.1" },
-        { name: "Type", value: "Message" },
-        { name: "Input", value: JSON.stringify(input) },
-        { name: "Function", value: func },
-      ],
+      tags,
     })
     return await fetch(this.mu_url, {
       method: "POST",
@@ -118,11 +126,13 @@ class CWAO {
     }).then(r => r.json())
   }
 
-  async query(pr_id) {
-    const { state } = await fetch(`${this.cu_url}/state/${pr_id}`).then(v =>
-      v.json(),
-    )
-    return state
+  async query({ process, func, input = {} }) {
+    const { id } = await this.execute({ process, func, input, query: true })
+    await sleep(1000)
+    const result = await fetch(
+      `${this.cu_url}/result/${id}/?process-id=${process}`,
+    ).then(v => v.json())
+    return result.Output
   }
 }
 

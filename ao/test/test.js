@@ -89,7 +89,11 @@ describe("WDB", function () {
       input: { num: 1, addr: pr2.id },
     })
     await sleep(500)
-    expect(await cwao.query(pr.id)).to.eql(6)
-    expect(await cwao.query(pr2.id)).to.eql(7)
+    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
+      { num: 6 },
+    )
+    expect(
+      await cwao.query({ process: pr2.id, func: "Num", input: {} }),
+    ).to.eql({ num: 7 })
   })
 })

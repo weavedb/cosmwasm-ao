@@ -33,10 +33,14 @@ class SU extends Base {
         data: req.body,
       })
       let ids = []
+
+      // [TODO]: process mix bundle (read-only & non-read-only)
+      let read_only = false
       for (let v of new Bundle(req.body).items) {
         this.txmap[v.id] = tx.id
-        ids.push(v.id)
         const m = parse(v.tags)
+        if (m.read_only === "True") read_only = true
+        ids.push(v.id)
         if (m.type === "Message") {
           if (!this.pmap[v.target]) this.pmap[v.target] = []
           this.pmap[v.target].push({
@@ -48,10 +52,12 @@ class SU extends Base {
           this.processes[v.id] = { id: v.id, tx: Date.now(), process: v }
         }
       }
-      tx.addTag("Bundle-Format", "binary")
-      tx.addTag("Bundle-Version", "2.0.0")
-      await this.arweave.transactions.sign(tx, this.wallet)
-      await this.arweave.transactions.post(tx)
+      if (!read_only) {
+        tx.addTag("Bundle-Format", "binary")
+        tx.addTag("Bundle-Version", "2.0.0")
+        await this.arweave.transactions.sign(tx, this.wallet)
+        await this.arweave.transactions.post(tx)
+      }
       res.json({ id: tx.id })
     })
     this.server.get("/:process", async (req, res) => {

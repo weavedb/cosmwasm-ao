@@ -128,7 +128,9 @@ class CU extends Base {
           funds: [],
         }
         let res = null
-        if (tags.function === "reply") {
+        if (tags.read_only === "True") {
+          res = this.vms[pid].query(env, { [tags.function]: input })
+        } else if (tags.function === "reply") {
           res = this.vms[pid].reply(env, input)
         } else {
           res = this.vms[pid].execute(env, info, {
@@ -181,54 +183,58 @@ class CU extends Base {
       this.eval(pid, () => {
         let resp = { Messages: [], Spawns: [], Output: [] }
         let qres = this.results[pid][mid]
-        for (let v of qres.ok.attributes) {
-          if (v.key === "action" && v.value === "perform_action") {
-            if (this.messages[mid]) {
-              const tags = parse(this.messages[mid].tags)
-              if (tags.reply_on && tags.reply_on === "success") {
-                let _tags = [
-                  { name: "Data-Protocol", value: "wdb" },
-                  { name: "Variant", value: "wdb.TN.1" },
-                  { name: "Type", value: "Message" },
-                  {
-                    name: "Input",
-                    value: JSON.stringify({
-                      id: Number(tags.reply_id),
-                      result: { ok: { events: [], data: null } },
-                    }),
-                  },
-                  { name: "Function", value: "reply" },
-                  { name: "From-Process", value: pid },
-                ]
-                resp.Messages.push({
-                  Target: tags.from_process,
-                  Tags: _tags,
-                })
+        const tags = parse(this.messages[mid].tags)
+        if (tags.read_only === "True") {
+          resp.Output = JSON.parse(atob(qres.ok))
+        } else {
+          for (let v of qres.ok.attributes) {
+            if (v.key === "action" && v.value === "perform_action") {
+              if (this.messages[mid]) {
+                if (tags.reply_on && tags.reply_on === "success") {
+                  let _tags = [
+                    { name: "Data-Protocol", value: "wdb" },
+                    { name: "Variant", value: "wdb.TN.1" },
+                    { name: "Type", value: "Message" },
+                    {
+                      name: "Input",
+                      value: JSON.stringify({
+                        id: Number(tags.reply_id),
+                        result: { ok: { events: [], data: null } },
+                      }),
+                    },
+                    { name: "Function", value: "reply" },
+                    { name: "From-Process", value: pid },
+                  ]
+                  resp.Messages.push({
+                    Target: tags.from_process,
+                    Tags: _tags,
+                  })
+                }
               }
             }
           }
-        }
-        for (let v of qres.ok.messages) {
-          const { contract_addr, funds, msg } = v.msg.wasm.execute
-          const { id, reply_on } = v
-          const _msg = JSON.parse(atob(msg))
-          for (let k in _msg) {
-            let tags = [
-              { name: "Data-Protocol", value: "wdb" },
-              { name: "Variant", value: "wdb.TN.1" },
-              { name: "Type", value: "Message" },
-              { name: "Input", value: JSON.stringify(_msg[k]) },
-              { name: "Function", value: k },
-              { name: "From-Process", value: pid },
-            ]
-            if (reply_on) {
-              tags.push({ name: "Reply_On", value: reply_on })
-              tags.push({ name: "Reply_Id", value: Number(id).toString() })
+          for (let v of qres.ok.messages) {
+            const { contract_addr, funds, msg } = v.msg.wasm.execute
+            const { id, reply_on } = v
+            const _msg = JSON.parse(atob(msg))
+            for (let k in _msg) {
+              let tags = [
+                { name: "Data-Protocol", value: "wdb" },
+                { name: "Variant", value: "wdb.TN.1" },
+                { name: "Type", value: "Message" },
+                { name: "Input", value: JSON.stringify(_msg[k]) },
+                { name: "Function", value: k },
+                { name: "From-Process", value: pid },
+              ]
+              if (reply_on) {
+                tags.push({ name: "Reply_On", value: reply_on })
+                tags.push({ name: "Reply_Id", value: Number(id).toString() })
+              }
+              resp.Messages.push({
+                Target: contract_addr,
+                Tags: tags,
+              })
             }
-            resp.Messages.push({
-              Target: contract_addr,
-              Tags: tags,
-            })
           }
         }
         res.json(resp)
