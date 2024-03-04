@@ -4,6 +4,22 @@ const CWAO = require("../../sdk")
 const { start } = require("../test-utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
+const { bech32 } = require("bech32")
+const base64url = require("base64url")
+
+function toBech32(arweaveAddress, prefix = "ao") {
+  // Decode the base64url Arweave address to get the original bytes
+  const decodedBytes = base64url.toBuffer(arweaveAddress)
+
+  // Convert the bytes to Bech32 words
+  const words = bech32.toWords(decodedBytes)
+
+  // Encode the words with the specified prefix to get the Bech32 address
+  const bech32Address = bech32.encode(prefix, words)
+
+  return bech32Address
+}
+
 const sleep = x =>
   new Promise(res => {
     setTimeout(() => res(), x)
@@ -58,7 +74,7 @@ describe("WDB", function () {
     expect(await wdb.getState(pr.id)).to.eql(6)
   })
 
-  it.only("should handle bare cosmwasm", async () => {
+  it("should handle bare cosmwasm", async () => {
     const _binary = await getModule(
       "cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
     )
@@ -95,5 +111,62 @@ describe("WDB", function () {
     expect(
       await cwao.query({ process: pr2.id, func: "Num", input: {} }),
     ).to.eql({ num: 7 })
+  })
+
+  it.only("should handle cw20 token", async () => {
+    const _binary = await getModule(
+      "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
+    )
+    const cwao = new CWAO({ wallet })
+    const wallet2 = await cwao.arweave.wallets.generate()
+    const addr2 = await cwao.arweave.wallets.jwkToAddress(wallet2)
+    const addr2_32 = toBech32(addr2, "ao")
+    const mod_id = await cwao.deploy(_binary)
+    const sch = await arweave.wallets.jwkToAddress(wallet)
+    await cwao.addScheduler({ url: "http://localhost:1986" })
+    const addr32 = toBech32(sch, "ao")
+    const input = {
+      name: "WeaveDB Token",
+      symbol: "WDB",
+      decimals: 18,
+      initial_balances: [{ address: addr32, amount: "5000000" }],
+      mint: {
+        minter: addr32,
+        cap: "1000000000",
+      },
+    }
+    const pr = await cwao.instantiate({
+      module: mod_id,
+      scheduler: sch,
+      input,
+    })
+    await sleep(500)
+    expect(
+      await cwao.query({
+        process: pr.id,
+        func: "balance",
+        input: { address: addr32 },
+      }),
+    ).to.eql({ balance: "5000000" })
+    await cwao.execute({
+      process: pr.id,
+      func: "transfer",
+      input: { recipient: addr2_32, amount: "2000000" },
+    })
+    await sleep(500)
+    expect(
+      await cwao.query({
+        process: pr.id,
+        func: "balance",
+        input: { address: addr2_32 },
+      }),
+    ).to.eql({ balance: "2000000" })
+    expect(
+      await cwao.query({
+        process: pr.id,
+        func: "balance",
+        input: { address: addr32 },
+      }),
+    ).to.eql({ balance: "3000000" })
   })
 })
