@@ -1,3 +1,5 @@
+const { bech32 } = require("bech32")
+const base64url = require("base64url")
 const {
   BasicBackendApi,
   BasicKVIterStorage,
@@ -15,6 +17,19 @@ const {
 } = require("arbundles")
 const { getSUByProcess, parse } = require("./utils")
 const Base = require("./base")
+
+function toBech32(arweaveAddress, prefix = "ao") {
+  // Decode the base64url Arweave address to get the original bytes
+  const decodedBytes = base64url.toBuffer(arweaveAddress)
+
+  // Convert the bytes to Bech32 words
+  const words = bech32.toWords(decodedBytes)
+
+  // Encode the words with the specified prefix to get the Bech32 address
+  const bech32Address = bech32.encode(prefix, words)
+
+  return bech32Address
+}
 
 class CU extends Base {
   constructor(
@@ -55,7 +70,7 @@ class CU extends Base {
       decode: true,
     })
     const backend = {
-      backend_api: new BasicBackendApi("wdb"),
+      backend_api: new BasicBackendApi("ao"),
       storage: new BasicKVIterStorage(),
       querier: new BasicQuerier(),
     }
@@ -76,17 +91,22 @@ class CU extends Base {
       block: {
         height: this.height[pid]++,
         time: Number(Date.now()).toString(),
-        chain_id: "wdb",
+        chain_id: "ao",
       },
       contract: { address: pid },
     }
     const info = {
-      sender: await this.arweave.wallets.jwkToAddress(this.wallet),
+      sender: this.messages[pid].owner.address,
       funds: [],
     }
     this.results[pid] ??= {}
-    const result = this.vms[pid].instantiate(env, info, initial_input)
-    this.results[pid][pid] = result.json
+    let result = null
+    try {
+      result = this.vms[pid].instantiate(env, info, initial_input)
+      this.results[pid][pid] = result.json
+    } catch (e) {
+      console.log(e)
+    }
     return result.json
   }
   async _eval(pid) {
@@ -119,12 +139,13 @@ class CU extends Base {
           block: {
             height: this.height[pid]++,
             time: Number(Date.now()).toString(),
-            chain_id: "wdb",
+            chain_id: "ao",
           },
           contract: { address: pid },
         }
+
         const info = {
-          sender: await this.arweave.wallets.jwkToAddress(this.wallet),
+          sender: toBech32(v.node.owner.address, "ao"),
           funds: [],
         }
         let res = null
@@ -166,7 +187,7 @@ class CU extends Base {
             block: {
               height: this.height[pid],
               time: Number(Date.now()).toString(),
-              chain_id: "wdb",
+              chain_id: "ao",
             },
             contract: { address: pid },
           }

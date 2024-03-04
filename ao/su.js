@@ -1,3 +1,4 @@
+const crypto = require("crypto")
 const express = require("express")
 const Arweave = require("arweave")
 const {
@@ -41,15 +42,27 @@ class SU extends Base {
         const m = parse(v.tags)
         if (m.read_only === "True") read_only = true
         ids.push(v.id)
+        const publicKeyBuffer = Buffer.from(v.owner, "base64url")
+        const hashBuffer = crypto
+          .createHash("sha256")
+          .update(publicKeyBuffer)
+          .digest()
+        const address = hashBuffer.toString("base64url")
         if (m.type === "Message") {
           if (!this.pmap[v.target]) this.pmap[v.target] = []
           this.pmap[v.target].push({
             id: v.id,
+            owner: address,
             ts: Date.now(),
             item: v,
           })
         } else if (m.type === "Process") {
-          this.processes[v.id] = { id: v.id, tx: Date.now(), process: v }
+          this.processes[v.id] = {
+            id: v.id,
+            tx: Date.now(),
+            process: v,
+            owner: address,
+          }
         }
       }
       if (!read_only) {
@@ -64,7 +77,11 @@ class SU extends Base {
       let cursor = 0
       const edges = this.pmap[req.params["process"]].map(v => {
         return {
-          node: { message: { id: v.id, tags: v.item.tags }, timestamp: v.ts },
+          node: {
+            message: { id: v.id, tags: v.item.tags },
+            owner: { address: v.owner },
+            timestamp: v.ts,
+          },
           cursor: Number(v.ts).toString(),
         }
       })
@@ -77,6 +94,7 @@ class SU extends Base {
       const pr = this.processes[req.params["process"]]
       res.json({
         process_id: pr.id,
+        owner: { address: pr.owner },
         tags: pr.process.tags,
         timestamp: pr.ts,
       })
