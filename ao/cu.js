@@ -158,7 +158,6 @@ class CU extends Base {
             [tags.function]: input,
           })
         }
-
         this.results[pid][id] = res.json
       } catch (e) {
         console.log(e)
@@ -202,20 +201,51 @@ class CU extends Base {
     this.server.get("/result/:message", async (req, res) => {
       const pid = req.query["process-id"]
       const mid = req.params.message
+
       this.eval(pid, () => {
+        const tags = parse(this.messages[mid].tags)
         let qres = this.results[pid][mid]
+        let resp = { Messages: [], Spawns: [], Output: [] }
         if (qres.error) {
-          res.json({ Error: qres.error })
+          if (
+            tags.reply_on &&
+            (tags.reply_on === "error" || tags.reply_on === "always") &&
+            qres.error
+          ) {
+            let _tags = [
+              { name: "Data-Protocol", value: "wdb" },
+              { name: "Variant", value: "wdb.TN.1" },
+              { name: "Type", value: "Message" },
+              {
+                name: "Input",
+                value: JSON.stringify({
+                  id: Number(tags.reply_id),
+                  result: { error: qres.error },
+                }),
+              },
+              { name: "Function", value: "reply" },
+              { name: "From-Process", value: pid },
+            ]
+            resp.Messages.push({
+              Target: tags.from_process,
+              Tags: _tags,
+            })
+          }
+          resp.Error = qres.error
+          res.json(resp)
         } else {
-          let resp = { Messages: [], Spawns: [], Output: [] }
-          const tags = parse(this.messages[mid].tags)
           if (tags.read_only === "True") {
             resp.Output = JSON.parse(atob(qres.ok))
           } else {
             for (let v of qres.ok.attributes) {
               if (v.key === "action" && v.value === "perform_action") {
                 if (this.messages[mid]) {
-                  if (tags.reply_on && tags.reply_on === "success") {
+                  if (
+                    tags.reply_on &&
+                    (tags.reply_on === "success" ||
+                      tags.reply_on === "always") &&
+                    qres.ok
+                  ) {
                     let _tags = [
                       { name: "Data-Protocol", value: "wdb" },
                       { name: "Variant", value: "wdb.TN.1" },

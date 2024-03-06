@@ -74,7 +74,7 @@ describe("WDB", function () {
     expect(await wdb.getState(pr.id)).to.eql(6)
   })
   */
-  it("should handle bare cosmwasm", async () => {
+  it.only("should handle bare cosmwasm", async () => {
     const _binary = await getModule(
       "cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
     )
@@ -111,9 +111,25 @@ describe("WDB", function () {
     expect(
       await cwao.query({ process: pr2.id, func: "Num", input: {} }),
     ).to.eql({ num: 7 })
+
+    await cwao.execute({ process: pr.id, func: "Add5", input: { num: 2 } })
+    await sleep(500)
+    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
+      { num: 8 },
+    )
+
+    await cwao.execute({
+      process: pr.id,
+      func: "Add4",
+      input: { num: 1, addr: pr2.id },
+    })
+    await sleep(500)
+    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
+      { num: 11 },
+    )
   })
 
-  it.only("should handle cw20 token", async () => {
+  it("should handle cw20 token", async () => {
     const _binary = await getModule(
       "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
     )

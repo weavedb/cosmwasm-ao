@@ -5,6 +5,8 @@ pub enum ExecuteMsg {
     Add { num: u8 },
     Add2 { num: u8, addr: String },
     Add3 { num: u8, addr: String },
+    Add4 { num: u8, addr: String },
+    Add5 { num: u8 },    
 }
 
 
