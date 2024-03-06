@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn, StdError
 };
+use serde::{Serialize, Deserialize};
 use crate::state::NUM;
 use crate::msg::{ NumResp, InstantiateMsg, QueryMsg, ExecuteMsg};
 
@@ -44,6 +45,11 @@ pub fn execute(
 	Add4 { num, addr } => exec::add4(deps, info, num, addr),
 	Add5 { num } => exec::add5(deps, info, num),
     }
+}
+
+#[derive(Serialize, Deserialize)]
+struct SubErr {
+    num: u8
 }
 
 mod exec {
@@ -100,7 +106,7 @@ mod exec {
             funds: vec![],
 	});
 	let sub_msg = SubMsg {
-	    id: 1, 
+	    id: 2, 
 	    msg: cosmos_msg,
 	    reply_on: ReplyOn::Always,
 	    gas_limit: None,
@@ -112,10 +118,14 @@ mod exec {
 	if num < 2 {
 	    return Err(StdError::generic_err("Testing submessages"));
 	}
+	let sub_err = SubErr {
+	    num: num
+	};
 	NUM.update(deps.storage, move |num2| -> StdResult<_> {
             Ok(num + num2)
         })?;
-        Ok(Response::new().add_attribute("action", "perform_action"))
+	let binary_data = to_json_binary(&sub_err)?;
+        Ok(Response::new().add_attribute("action", "perform_action").set_data(binary_data))
     }
     
 }
