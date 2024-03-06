@@ -51,7 +51,11 @@ class CWAO {
     console.log("Module uploaded:", tx.id)
     return tx.id
   }
-
+  async getMessage(mid, pid) {
+    return await fetch(`${this.cu_url}/result/${mid}?process-id=${pid}`).then(
+      r => r.json(),
+    )
+  }
   async addScheduler({
     url,
     ttl = 1000 * 60 * 60,

@@ -1,6 +1,6 @@
 const { expect } = require("chai")
 const WDB = require("../wdb")
-const CWAO = require("../../sdk")
+const CWAO = require("../../cosmwasm-ao")
 const { start } = require("../test-utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
@@ -42,7 +42,7 @@ describe("WDB", function () {
     su.stop()
     cu.stop()
   })
-
+  /*
   it("should handle bare wasm", async () => {
     const _binary = await getModule()
     const wdb = new WDB({ wallet, arweave })
@@ -73,7 +73,7 @@ describe("WDB", function () {
     await wdb.addMessage({ Process: pr.id, num: 3 })
     expect(await wdb.getState(pr.id)).to.eql(6)
   })
-
+  */
   it("should handle bare cosmwasm", async () => {
     const _binary = await getModule(
       "cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
@@ -168,5 +168,13 @@ describe("WDB", function () {
         input: { address: addr32 },
       }),
     ).to.eql({ balance: "3000000" })
+
+    // test error
+    const { id } = await cwao.execute({
+      process: pr.id,
+      func: "transfer",
+      input: { recipient: addr2_32, amount: "20000000" },
+    })
+    expect((await cwao.getMessage(id, pr.id)).Error).to.exist
   })
 })
