@@ -49,7 +49,7 @@ class MU extends Base {
       fetch(`${this.cu_url}/result/${id}?process-id=${bd.items[0].target}`)
         .then(r => r.json())
         .then(async json => {
-          for (let v of json.Messages) {
+          for (let v of json.Messages ?? []) {
             const signer = new ArweaveSigner(this.wallet)
             const _item = createData("", signer, {
               target: v.Target,
