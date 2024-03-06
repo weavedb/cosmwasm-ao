@@ -254,7 +254,7 @@ class CU extends Base {
                         name: "Input",
                         value: JSON.stringify({
                           id: Number(tags.reply_id),
-                          result: { ok: { events: [], data: null } },
+                          result: { ok: { events: [], data: qres.ok.data } },
                         }),
                       },
                       { name: "Function", value: "reply" },

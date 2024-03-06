@@ -92,18 +92,18 @@ describe("WDB", function () {
       scheduler: sch,
       input: { num: 1 },
     })
-    await cwao.execute({ process: pr.id, func: "Add", input: { num: 1 } })
-    await cwao.execute({ process: pr2.id, func: "Add", input: { num: 2 } })
+    await cwao.execute({ process: pr.id, func: "Add", input: { num: 1 } }) // 1-5
+    await cwao.execute({ process: pr2.id, func: "Add", input: { num: 2 } }) // 2-3
     await cwao.execute({
       process: pr.id,
       func: "Add2",
       input: { num: 3, addr: pr2.id },
-    })
+    }) // 2-6
     await cwao.execute({
       process: pr.id,
       func: "Add3",
       input: { num: 1, addr: pr2.id },
-    })
+    }) // 2-7, 1-6
     await sleep(500)
     expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
       { num: 6 },
@@ -112,7 +112,7 @@ describe("WDB", function () {
       await cwao.query({ process: pr2.id, func: "Num", input: {} }),
     ).to.eql({ num: 7 })
 
-    await cwao.execute({ process: pr.id, func: "Add5", input: { num: 2 } })
+    await cwao.execute({ process: pr.id, func: "Add5", input: { num: 2 } }) // 1-8
     await sleep(500)
     expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
       { num: 8 },
@@ -122,10 +122,25 @@ describe("WDB", function () {
       process: pr.id,
       func: "Add4",
       input: { num: 1, addr: pr2.id },
-    })
+    }) // error
     await sleep(500)
     expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
       { num: 11 },
+    )
+
+    await cwao.execute({
+      process: pr.id,
+      func: "Add4",
+      input: { num: 3, addr: pr2.id },
+    }) // with data
+    await sleep(500)
+
+    expect(
+      await cwao.query({ process: pr2.id, func: "Num", input: {} }),
+    ).to.eql({ num: 10 })
+
+    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
+      { num: 14 },
     )
   })
 

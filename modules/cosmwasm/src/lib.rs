@@ -1,6 +1,7 @@
 use cosmwasm_std::{
-    entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsgResult, Reply
+    from_binary, entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsgResult, Reply,SubMsgExecutionResponse, 
 };
+use serde::Deserialize;
 use msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use thiserror::Error;
 mod contract;
@@ -25,6 +26,11 @@ pub fn instantiate(
     contract::instantiate(deps, env, info, msg)
 }
 
+#[derive(Deserialize)]
+struct SubErr {
+    num: u8
+}
+
 #[entry_point]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     contract::execute(deps, env, info, msg)
@@ -47,6 +53,23 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                 SubMsgResult::Ok(_) => {
 		    NUM.update(deps.storage, move |num2| -> StdResult<_> {
 			Ok(1 + num2)
+		    })?;
+		    Ok(Response::new().add_attribute("action", "handle_reply").add_attribute("result", "success"))
+                },
+                SubMsgResult::Err(err) => {
+		    Ok(Response::new().add_attribute("action", "handle_reply").add_attribute("error", err))
+                },
+            }
+        },
+        2 => {
+            match msg.result {
+                SubMsgResult::Ok(SubMsgExecutionResponse { data, events }) => {
+		    let result: Result<SubErr, StdError> = data.map_or_else(
+			|| Err(StdError::generic_err("no data returned")),
+			|binary_data| from_binary(&binary_data),
+		    );
+		    NUM.update(deps.storage, move |num2| -> StdResult<_> {
+			Ok(num2 + result.unwrap().num)
 		    })?;
 		    Ok(Response::new().add_attribute("action", "handle_reply").add_attribute("result", "success"))
                 },
