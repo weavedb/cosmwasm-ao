@@ -9,7 +9,7 @@ mod state;
 use crate::state::NUM;
 
 #[entry_point]
-pub fn query(deps: Deps, env: Env, msg: msg::QueryMsg)
+pub fn query(deps: Deps, env: Env, msg: QueryMsg)
 	     -> StdResult<Binary>
 {
     contract::query(deps, env, msg)
@@ -51,6 +51,9 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 		    Ok(Response::new().add_attribute("action", "handle_reply").add_attribute("result", "success"))
                 },
                 SubMsgResult::Err(err) => {
+		    NUM.update(deps.storage, move |num2| -> StdResult<_> {
+			Ok(3 + num2)
+		    })?;
 		    Ok(Response::new().add_attribute("action", "handle_reply").add_attribute("error", err))
                 },
             }

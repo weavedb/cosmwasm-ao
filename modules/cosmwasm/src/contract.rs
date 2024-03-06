@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
 use cosmwasm_std::{
-    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn
+    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn, StdError
 };
 use crate::state::NUM;
 use crate::msg::{ NumResp, InstantiateMsg, QueryMsg, ExecuteMsg};
@@ -42,11 +41,12 @@ pub fn execute(
 	Add { num } => exec::add(deps, info, num),
 	Add2 { num, addr } => exec::add2(deps, info, num, addr),
 	Add3 { num, addr } => exec::add3(deps, info, num, addr),
+	Add4 { num, addr } => exec::add4(deps, info, num, addr),
+	Add5 { num } => exec::add5(deps, info, num),
     }
 }
 
 mod exec {
-    use cosmwasm_std::StdError;
     use super::*;
     use ExecuteMsg::*;
     
@@ -57,7 +57,7 @@ mod exec {
         Ok(Response::new().add_attribute("action", "perform_action"))
     }
     
-    pub fn add2(deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
+    pub fn add2(_deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
 	let msg = Add {
             num: num
 	};
@@ -70,7 +70,7 @@ mod exec {
         Ok(Response::new().add_message(cosmos_msg))
     }
     
-    pub fn add3(deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
+    pub fn add3(_deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
 	let msg = Add {
             num: num
 	};
@@ -89,6 +89,33 @@ mod exec {
         Ok(Response::new().add_submessage(sub_msg))
     }
 
+    pub fn add4(_deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
+	let msg = Add5 {
+            num: num
+	};
+	let binary_msg: StdResult<Binary> = to_json_binary(&msg);
+	let cosmos_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: addr,
+            msg: binary_msg?,
+            funds: vec![],
+	});
+	let sub_msg = SubMsg {
+	    id: 1, 
+	    msg: cosmos_msg,
+	    reply_on: ReplyOn::Always,
+	    gas_limit: None,
+	};
+        Ok(Response::new().add_submessage(sub_msg))
+    }
+
+    pub fn add5(deps: DepsMut, _info: MessageInfo, num: u8) -> StdResult<Response> {
+	if num < 2 {
+	    return Err(StdError::generic_err("Testing submessages"));
+	}
+	NUM.update(deps.storage, move |num2| -> StdResult<_> {
+            Ok(num + num2)
+        })?;
+        Ok(Response::new().add_attribute("action", "perform_action"))
+    }
+    
 }
-
-
