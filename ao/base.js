@@ -1,5 +1,6 @@
 const express = require("express")
 const Arweave = require("arweave")
+const cors = require("cors")
 
 class Base {
   constructor(port, arweave, graphql, type) {
@@ -10,6 +11,7 @@ class Base {
     this.server = express()
     this.server.use(express.raw())
     this.server.use(express.json())
+    this.server.use(cors())
   }
   async genWallet() {
     this.wallet = await this.arweave.wallets.generate()

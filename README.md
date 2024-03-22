@@ -1,6 +1,6 @@
-# WeaveChain
+# CosmWasm AO
 
-WeaveChain is a [CosmWasm](https://cosmwasm.com/)-based smartcontract network on [AO](https://cookbook_ao.g8way.io/).
+CosmWasm AO is a [CosmWasm](https://cosmwasm.com/)-based smartcontract network on [AO](https://cookbook_ao.g8way.io/).
 
 ## AO
 
