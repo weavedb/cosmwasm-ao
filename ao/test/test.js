@@ -1,6 +1,6 @@
 const { expect } = require("chai")
 const WDB = require("../wdb")
-const CWAO = require("../../cosmwasm-ao")
+const CWAO = require("../../cwao-sdk")
 const { start } = require("../test-utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
@@ -27,7 +27,7 @@ const sleep = x =>
 
 const getModule = async (
   module_path = "bare-wasm/target/wasm32-unknown-unknown/release/aotest.wasm",
-) => readFileSync(resolve(__dirname, "../../modules/", module_path))
+) => readFileSync(resolve(__dirname, "../../cosmwasm/", module_path))
 
 describe("WDB", function () {
   this.timeout(0)

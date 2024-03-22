@@ -48,7 +48,7 @@ const getVM = async () => {
   const wasmBytecode = readFileSync(
     resolve(
       __dirname,
-      "../../modules/cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
+      "../../cosmwasm/cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
     ),
   )
   const backend = {
