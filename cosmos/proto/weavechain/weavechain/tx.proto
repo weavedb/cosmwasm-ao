@@ -1,7 +1,0 @@
-syntax = "proto3";
-package weavechain.weavechain;
-
-option go_package = "weavechain/x/weavechain/types";
-
-// Msg defines the Msg service.
-service Msg {}

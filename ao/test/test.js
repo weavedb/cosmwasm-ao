@@ -74,7 +74,7 @@ describe("WDB", function () {
     expect(await wdb.getState(pr.id)).to.eql(6)
   })
   */
-  it.only("should handle bare cosmwasm", async () => {
+  it("should handle bare cosmwasm", async () => {
     const _binary = await getModule(
       "cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
     )
@@ -144,7 +144,7 @@ describe("WDB", function () {
     )
   })
 
-  it("should handle cw20 token", async () => {
+  it.only("should handle cw20 token", async () => {
     const _binary = await getModule(
       "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
     )
@@ -153,9 +153,13 @@ describe("WDB", function () {
     const addr2 = await cwao.arweave.wallets.jwkToAddress(wallet2)
     const addr2_32 = toBech32(addr2, "ao")
     const mod_id = await cwao.deploy(_binary)
-    const sch = await arweave.wallets.jwkToAddress(wallet)
+
     await cwao.addScheduler({ url: "http://localhost:1986" })
+
+    const sch = await arweave.wallets.jwkToAddress(wallet)
+
     const addr32 = toBech32(sch, "ao")
+
     const input = {
       name: "WeaveDB Token",
       symbol: "WDB",

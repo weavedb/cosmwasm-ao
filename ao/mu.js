@@ -1,5 +1,6 @@
 const express = require("express")
 const Arweave = require("arweave")
+
 const {
   Bundle,
   DataItem,
@@ -38,6 +39,7 @@ class MU extends Base {
     } else if (tags.type === "Process") {
       url = await getSU(tags.scheduler, this.graphql)
     }
+
     await fetch(url, {
       method: "POST",
       headers: {

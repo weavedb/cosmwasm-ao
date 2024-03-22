@@ -1,8 +1,10 @@
-const Arweave = require("arweave")
+let Arweave = require("arweave")
+if (Arweave.default) Arweave = Arweave.default
 const {
   Bundle,
   DataItem,
   ArweaveSigner,
+  ArconnectSigner,
   bundleAndSignData,
   createData,
 } = require("arbundles")
@@ -28,7 +30,23 @@ class CWAO {
     this.wallet = wallet
     this.arweave = new Arweave(arweave)
   }
-
+  async getSigner() {
+    if (this.wallet.sign) {
+      await this.wallet.connect([
+        "ACCESS_ADDRESS",
+        "ACCESS_PUBLIC_KEY",
+        "SIGN_TRANSACTION",
+        "SIGNATURE",
+        "ENCRYPT",
+        "DECRYPT",
+      ])
+      const signer = new ArconnectSigner(this.wallet)
+      await signer.setPublicKey()
+      return signer
+    } else {
+      return new ArweaveSigner(this.wallet)
+    }
+  }
   async deploy(
     mod,
     tags = [
@@ -43,8 +61,8 @@ class CWAO {
     ],
   ) {
     const tx = await this.arweave.createTransaction({ data: mod })
-    const signer = new ArweaveSigner(this.wallet)
-    const pr = createData(mod, signer, { tags })
+    //const signer = new ArweaveSigner(this.wallet)
+    //const pr = createData(mod, signer, { tags })
     for (let v of tags) tx.addTag(v.name, v.value)
     await this.arweave.transactions.sign(tx, this.wallet)
     await this.arweave.transactions.post(tx)
@@ -67,7 +85,7 @@ class CWAO {
   }) {
     tags.push({ name: "Url", value: url })
     tags.push({ name: "Time-To-Live", value: Number(ttl).toString() })
-    const signer = new ArweaveSigner(this.wallet)
+    const signer = await this.getSigner()
     const pr = createData("", signer, { tags })
     const bundle = await bundleAndSignData([pr], signer)
     const tx = await this.arweave.createTransaction({ data: bundle.getRaw() })
@@ -75,7 +93,7 @@ class CWAO {
     tx.addTag("Bundle-Version", "2.0.0")
     const id = bundle.getIds()[0]
     await this.arweave.transactions.sign(tx, this.wallet)
-    await this.arweave.transactions.post(tx)
+    console.log(await this.arweave.transactions.post(tx))
     console.log("Scheculer uploaded:", tx.id)
     return tx.id
   }
@@ -94,7 +112,7 @@ class CWAO {
     if (input) {
       tags.push({ name: "Input", value: JSON.stringify(input) })
     }
-    const signer = new ArweaveSigner(this.wallet)
+    const signer = await this.getSigner()
     const pr = createData("", signer, {
       tags,
     })
@@ -108,7 +126,7 @@ class CWAO {
   }
 
   async execute({ process, func, input = {}, query = false }) {
-    const signer = new ArweaveSigner(this.wallet)
+    const signer = await this.getSigner()
     let tags = [
       { name: "Data-Protocol", value: "wdb" },
       { name: "Variant", value: "wdb.TN.1" },
