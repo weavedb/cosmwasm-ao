@@ -93,7 +93,7 @@ class CWAO {
     tx.addTag("Bundle-Version", "2.0.0")
     const id = bundle.getIds()[0]
     await this.arweave.transactions.sign(tx, this.wallet)
-    console.log(await this.arweave.transactions.post(tx))
+    await this.arweave.transactions.post(tx)
     console.log("Scheculer uploaded:", tx.id)
     return tx.id
   }
