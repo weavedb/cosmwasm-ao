@@ -61,12 +61,9 @@ class CWAO {
     ],
   ) {
     const tx = await this.arweave.createTransaction({ data: mod })
-    //const signer = new ArweaveSigner(this.wallet)
-    //const pr = createData(mod, signer, { tags })
     for (let v of tags) tx.addTag(v.name, v.value)
     await this.arweave.transactions.sign(tx, this.wallet)
     await this.arweave.transactions.post(tx)
-    console.log("Module uploaded:", tx.id)
     return tx.id
   }
   async getMessage(mid, pid) {
@@ -94,7 +91,6 @@ class CWAO {
     const id = bundle.getIds()[0]
     await this.arweave.transactions.sign(tx, this.wallet)
     await this.arweave.transactions.post(tx)
-    console.log("Scheculer uploaded:", tx.id)
     return tx.id
   }
   async instantiate({
