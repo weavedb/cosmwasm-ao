@@ -3,7 +3,7 @@ const { Input, Flex, Box } = require("@chakra-ui/react")
 const { useState } = require("react")
 const bech32 = require("bech32")
 const base64url = require("base64url")
-const { map, append } = require("ramda")
+const { equals, assoc, map, append } = require("ramda")
 function toBech32(arweaveAddress, prefix = "ao") {
   const decodedBytes = base64url.toBuffer(arweaveAddress)
   const words = bech32.toWords(decodedBytes)
@@ -16,7 +16,7 @@ export default function Home() {
   const [scheduler, setScheduler] = useState(null)
   const [token, setToken] = useState(null)
   const [tokens, setTokens] = useState([])
-  const [balance, setBalance] = useState(0)
+  const [balances, setBalances] = useState({})
   const [balanceAR, setBalanceAR] = useState("0")
   const [address, setAddress] = useState(null)
   const [to, setTo] = useState("")
@@ -27,11 +27,8 @@ export default function Home() {
   const [tokenDecimals, setTokenDecimals] = useState("18")
   const [tokenInitialHolder, setTokenInitialHolder] = useState("")
   const [tokenInitialAmount, setTokenInitialAmount] = useState("1000000")
-  const body = balance ? (
+  const body = balances ? (
     <>
-      <div>Module Proccess ID: {module}</div>
-      <div>Scheduler Address: {scheduler}</div>
-      <div>Balance: {balance}</div>
       <div>
         <Input value={to} onChange={e => setTo(e.target.value)} />
         <button
@@ -179,7 +176,6 @@ export default function Home() {
         {address ? (
           <>
             <Box mx={4}>{address}</Box>
-            <Box mr={4}>{balanceAR} AR</Box>
           </>
         ) : null}
       </Flex>
@@ -350,11 +346,11 @@ export default function Home() {
           }}
           onClick={() => setTab("mint")}
         >
-          Mint Token
+          Go To Mint
         </Flex>
       )}
       <Box mt={6} sx={{ textDecoration: "underline" }}>
-        Configurations
+        AO Configurations
       </Box>
       <Box px={6} pt={2} fontSize="14px">
         <Flex my={1}>
@@ -486,17 +482,21 @@ export default function Home() {
               func: "token_info",
               input: {},
             })
+            if (equals(_tokens, [])) {
+              alert("something went wrong")
+              return
+            }
             if (_tokens.name) {
-              setTokens(append(_tokens, tokens))
-              setBalance(
-                (
-                  await cwao.query({
-                    process: pr.id,
-                    func: "balance",
-                    input: { address: addr32 },
-                  })
-                ).balance,
-              )
+              setTokens(append({ addr: pr.id, info: _tokens }, tokens))
+              const _balance = (
+                await cwao.query({
+                  process: pr.id,
+                  func: "balance",
+                  input: { address: addr32 },
+                })
+              ).balance
+              console.log(_balance)
+              setBalances(assoc(pr.id, _balance, balances))
             }
           }, 3000)
         }}
@@ -505,7 +505,32 @@ export default function Home() {
       </Flex>
     </>
   )
-
+  const Wallet = (
+    <>
+      <Flex align="center" p={4} fontSize="20px">
+        <Flex pl={4}>
+          <Box mr={2}>{balanceAR}</Box>
+          <Box ml={2}>AR</Box>
+        </Flex>
+        <Box flex={1} />
+        <Flex mr={4} fontSize="14px"></Flex>
+      </Flex>
+      {map(v => {
+        return (
+          <Flex align="center" p={4} fontSize="20px">
+            <Flex pl={4}>
+              <Box mr={2}>{balances[v.addr]}</Box>
+              <Box ml={2}>{v.info.symbol}</Box>
+            </Flex>
+            <Box flex={1} />
+            <Flex mr={4} fontSize="14px">
+              Send
+            </Flex>
+          </Flex>
+        )
+      })(tokens)}
+    </>
+  )
   return (
     <Flex direction="column" minH="100%">
       <style jsx global>{`
@@ -538,14 +563,22 @@ export default function Home() {
           )
         })([
           { key: "misc", name: "Setup" },
-          { key: "wallet", name: "Wallet" },
-          { key: "mint", name: "Mint Token" },
+          { key: "wallet", name: "Tokens" },
+          { key: "mint", name: "Mint" },
           { key: "dex", name: "DEX" },
         ])}
       </Flex>
       <Flex justify="center" p={4}>
-        <Box maxW="700px" w="100%" bg="#eee" p={8} sx={{ borderRadius: "5px" }}>
-          {tab === "mint" ? (
+        <Box
+          maxW="700px"
+          w="100%"
+          bg="#eee"
+          p={tab === "wallet" ? 0 : 8}
+          sx={{ borderRadius: "5px" }}
+        >
+          {tab === "wallet" ? (
+            Wallet
+          ) : tab === "mint" ? (
             Mint
           ) : tab === "misc" ? (
             <Setup />
@@ -555,7 +588,7 @@ export default function Home() {
         </Box>
       </Flex>
       <Flex flex={1}></Flex>
-      <Flex p={4} justify="center">
+      <Flex p={6} justify="center">
         <Box
           as="a"
           target="_blank"
