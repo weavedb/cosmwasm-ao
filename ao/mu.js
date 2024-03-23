@@ -39,7 +39,6 @@ class MU extends Base {
     } else if (tags.type === "Process") {
       url = await getSU(tags.scheduler, this.graphql)
     }
-
     await fetch(url, {
       method: "POST",
       headers: {
@@ -70,8 +69,13 @@ class MU extends Base {
   async init() {
     await this.genWallet()
     this.server.post("/", async (req, res) => {
-      const id = await this.send(new DataItem(req.body))
-      res.json({ id })
+      try {
+        const id = await this.send(new DataItem(req.body))
+        res.json({ id })
+      } catch (e) {
+        res.status(400)
+        res.json({ error: "bad request" })
+      }
     })
     this.start()
   }

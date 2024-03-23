@@ -37,13 +37,14 @@ export default function Home() {
   const getBalance = async (id, addr) => {
     const addr32 = toBech32(addr, "ao")
     const cwao = new CWAO({ wallet: arweaveWallet })
-    const _balance = (
-      await cwao.query({
-        process: id,
-        func: "balance",
-        input: { address: addr32 },
-      })
-    ).balance
+    const _balance =
+      (
+        await cwao.query({
+          process: id,
+          func: "balance",
+          input: { address: addr32 },
+        })
+      )?.balance ?? "0"
     setBalances(assoc(id, _balance, balances))
   }
   useEffect(() => {
@@ -460,11 +461,11 @@ export default function Home() {
                   input: {},
                 })
                 setLoading(null)
-                if (equals(_tokens, [])) {
+                if (!_tokens || equals(_tokens, [])) {
                   alert("something went wrong")
                   return
                 }
-                if (_tokens.name) {
+                if (_tokens?.name) {
                   setTokenName("")
                   setTokenSymbol("")
                   const new_tokens = append(
@@ -601,13 +602,14 @@ export default function Home() {
                         setTimeout(async () => {
                           try {
                             popup("Token Transferred")
-                            const _balance = (
-                              await cwao.query({
-                                process: send,
-                                func: "balance",
-                                input: { address: from },
-                              })
-                            ).balance
+                            const _balance =
+                              (
+                                await cwao.query({
+                                  process: send,
+                                  func: "balance",
+                                  input: { address: from },
+                                })
+                              )?.balance ?? "0"
                             setBalances(assoc(send, _balance, balances))
                             setSendTo("")
                             setLoading(null)

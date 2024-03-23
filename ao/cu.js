@@ -80,6 +80,7 @@ class CU extends Base {
   }
   async instantiate(pid) {
     this.su[pid] ??= await getSUByProcess(pid, this.graphql)
+    if (typeof this.su[pid] === "undefined") return
     this.messages[pid] = await fetch(`${this.su[pid]}/processes/${pid}`).then(
       r => r.json(),
     )
@@ -126,6 +127,7 @@ class CU extends Base {
     if (!this.ongoing[pid]) await this._eval(pid)
   }
   async execute(pid) {
+    if (typeof this.su[pid] === "undefined") return
     const pmap = (await fetch(`${this.su[pid]}/${pid}`).then(r => r.json()))
       .edges
     for (let v of pmap) {
@@ -167,134 +169,161 @@ class CU extends Base {
   async init() {
     await this.genWallet()
     this.server.get("/state/:process", async (req, res) => {
-      const pid = req.params["process"]
-      if (process.protocol === "wdb-bare") {
-        const url = await getSUByProcess(pid, this.graphql)
-        const process = parse(
-          (await fetch(`${url}/processes/${pid}`).then(r => r.json())).tags,
-        )
-        const { ext, add } = await this.getModule(process.module, pid)
-        const pmap = (await fetch(`${url}/${pid}`).then(r => r.json())).edges
-        this.store[pid] = 0
-        for (let v of pmap) {
-          const tags = parse(v.node.message.tags)
-          add(tags.num * 1)
-        }
-        res.json({ state: ext() })
-      } else {
-        await this.eval(pid, () => {
-          const env = {
-            block: {
-              height: this.height[pid],
-              time: Number(Date.now()).toString(),
-              chain_id: "ao",
-            },
-            contract: { address: pid },
+      try {
+        const pid = req.params["process"]
+        if (process.protocol === "wdb-bare") {
+          const url = await getSUByProcess(pid, this.graphql)
+          if (typeof url === "undefined") {
+            res.status(400)
+            res.json({ error: "bad request" })
+            return
           }
-          let num = JSON.parse(
-            atob(this.vms[pid].query(env, { Num: {} }).json.ok),
-          ).num
-          res.json({ state: num })
-        })
+          const process = parse(
+            (await fetch(`${url}/processes/${pid}`).then(r => r.json())).tags,
+          )
+          const { ext, add } = await this.getModule(process.module, pid)
+          const pmap = (await fetch(`${url}/${pid}`).then(r => r.json())).edges
+          this.store[pid] = 0
+          for (let v of pmap) {
+            const tags = parse(v.node.message.tags)
+            add(tags.num * 1)
+          }
+          res.json({ state: ext() })
+        } else {
+          await this.eval(pid, () => {
+            const env = {
+              block: {
+                height: this.height[pid],
+                time: Number(Date.now()).toString(),
+                chain_id: "ao",
+              },
+              contract: { address: pid },
+            }
+            let num = JSON.parse(
+              atob(this.vms[pid].query(env, { Num: {} }).json.ok),
+            ).num
+            res.json({ state: num })
+          })
+        }
+      } catch (e) {
+        res.status(400)
+        res.json({ error: "bad request" })
       }
     })
     this.server.get("/result/:message", async (req, res) => {
-      const pid = req.query["process-id"]
-      const mid = req.params.message
-
-      this.eval(pid, () => {
-        const tags = parse(this.messages[mid].tags)
-        let qres = this.results[pid][mid]
-        let resp = { Messages: [], Spawns: [], Output: [] }
-        if (qres.error) {
-          if (
-            tags.reply_on &&
-            (tags.reply_on === "error" || tags.reply_on === "always") &&
-            qres.error
-          ) {
-            let _tags = [
-              { name: "Data-Protocol", value: "wdb" },
-              { name: "Variant", value: "wdb.TN.1" },
-              { name: "Type", value: "Message" },
-              {
-                name: "Input",
-                value: JSON.stringify({
-                  id: Number(tags.reply_id),
-                  result: { error: qres.error },
-                }),
-              },
-              { name: "Function", value: "reply" },
-              { name: "From-Process", value: pid },
-            ]
-            resp.Messages.push({
-              Target: tags.from_process,
-              Tags: _tags,
-            })
+      try {
+        const pid = req.query["process-id"]
+        const mid = req.params.message
+        if (typeof mid === "undefined") {
+          res.status(400)
+          res.json({ error: "bad request" })
+          return
+        }
+        this.eval(pid, () => {
+          if (typeof this.messages[mid] === "undefined") {
+            res.status(400)
+            res.json({ error: "bad request" })
+            return
           }
-          resp.Error = qres.error
-          res.json(resp)
-        } else {
-          if (tags.read_only === "True") {
-            resp.Output = JSON.parse(atob(qres.ok))
+          const tags = parse(this.messages[mid].tags)
+          let qres = this.results[pid][mid]
+          let resp = { Messages: [], Spawns: [], Output: [] }
+          if (qres.error) {
+            if (
+              tags.reply_on &&
+              (tags.reply_on === "error" || tags.reply_on === "always") &&
+              qres.error
+            ) {
+              let _tags = [
+                { name: "Data-Protocol", value: "wdb" },
+                { name: "Variant", value: "wdb.TN.1" },
+                { name: "Type", value: "Message" },
+                {
+                  name: "Input",
+                  value: JSON.stringify({
+                    id: Number(tags.reply_id),
+                    result: { error: qres.error },
+                  }),
+                },
+                { name: "Function", value: "reply" },
+                { name: "From-Process", value: pid },
+              ]
+              resp.Messages.push({
+                Target: tags.from_process,
+                Tags: _tags,
+              })
+            }
+            resp.Error = qres.error
+            res.json(resp)
           } else {
-            for (let v of qres.ok.attributes) {
-              if (v.key === "action" && v.value === "perform_action") {
-                if (this.messages[mid]) {
-                  if (
-                    tags.reply_on &&
-                    (tags.reply_on === "success" ||
-                      tags.reply_on === "always") &&
-                    qres.ok
-                  ) {
-                    let _tags = [
-                      { name: "Data-Protocol", value: "wdb" },
-                      { name: "Variant", value: "wdb.TN.1" },
-                      { name: "Type", value: "Message" },
-                      {
-                        name: "Input",
-                        value: JSON.stringify({
-                          id: Number(tags.reply_id),
-                          result: { ok: { events: [], data: qres.ok.data } },
-                        }),
-                      },
-                      { name: "Function", value: "reply" },
-                      { name: "From-Process", value: pid },
-                    ]
-                    resp.Messages.push({
-                      Target: tags.from_process,
-                      Tags: _tags,
-                    })
+            if (tags.read_only === "True") {
+              resp.Output = JSON.parse(atob(qres.ok))
+            } else {
+              for (let v of qres.ok.attributes) {
+                if (v.key === "action" && v.value === "perform_action") {
+                  if (this.messages[mid]) {
+                    if (
+                      tags.reply_on &&
+                      (tags.reply_on === "success" ||
+                        tags.reply_on === "always") &&
+                      qres.ok
+                    ) {
+                      let _tags = [
+                        { name: "Data-Protocol", value: "wdb" },
+                        { name: "Variant", value: "wdb.TN.1" },
+                        { name: "Type", value: "Message" },
+                        {
+                          name: "Input",
+                          value: JSON.stringify({
+                            id: Number(tags.reply_id),
+                            result: { ok: { events: [], data: qres.ok.data } },
+                          }),
+                        },
+                        { name: "Function", value: "reply" },
+                        { name: "From-Process", value: pid },
+                      ]
+                      resp.Messages.push({
+                        Target: tags.from_process,
+                        Tags: _tags,
+                      })
+                    }
                   }
                 }
               }
-            }
-            for (let v of qres.ok.messages) {
-              const { contract_addr, funds, msg } = v.msg.wasm.execute
-              const { id, reply_on } = v
-              const _msg = JSON.parse(atob(msg))
-              for (let k in _msg) {
-                let tags = [
-                  { name: "Data-Protocol", value: "wdb" },
-                  { name: "Variant", value: "wdb.TN.1" },
-                  { name: "Type", value: "Message" },
-                  { name: "Input", value: JSON.stringify(_msg[k]) },
-                  { name: "Function", value: k },
-                  { name: "From-Process", value: pid },
-                ]
-                if (reply_on) {
-                  tags.push({ name: "Reply_On", value: reply_on })
-                  tags.push({ name: "Reply_Id", value: Number(id).toString() })
+              for (let v of qres.ok.messages) {
+                const { contract_addr, funds, msg } = v.msg.wasm.execute
+                const { id, reply_on } = v
+                const _msg = JSON.parse(atob(msg))
+                for (let k in _msg) {
+                  let tags = [
+                    { name: "Data-Protocol", value: "wdb" },
+                    { name: "Variant", value: "wdb.TN.1" },
+                    { name: "Type", value: "Message" },
+                    { name: "Input", value: JSON.stringify(_msg[k]) },
+                    { name: "Function", value: k },
+                    { name: "From-Process", value: pid },
+                  ]
+                  if (reply_on) {
+                    tags.push({ name: "Reply_On", value: reply_on })
+                    tags.push({
+                      name: "Reply_Id",
+                      value: Number(id).toString(),
+                    })
+                  }
+                  resp.Messages.push({
+                    Target: contract_addr,
+                    Tags: tags,
+                  })
                 }
-                resp.Messages.push({
-                  Target: contract_addr,
-                  Tags: tags,
-                })
               }
             }
+            res.json(resp)
           }
-          res.json(resp)
-        }
-      })
+        })
+      } catch (e) {
+        res.status(400)
+        res.json({ error: "bad request" })
+      }
     })
     this.start()
   }
