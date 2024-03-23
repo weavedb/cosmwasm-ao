@@ -28,6 +28,16 @@ yarn start
 - Scheduler Unit (SU) : [http://localhost:1986](http://localhost:1986)
 - Compute Unit (CU) : [http://localhost:1987](http://localhost:1987)
 
+## CW20 Token Demo
+
+```bash
+cd dapps/cw20
+yarn
+yarn dev
+```
+
+Now a demo dapp is running at [localhost:3000](http://localhost:3000).
+
 ## Write CosmWasm Contract
 Follow this [tutorial](https://book.cosmwasm.com/basics/rust-project.html) to write some CosmWasm contracts.
 
@@ -43,16 +53,6 @@ cd weavechain/modules/cosmwasm
 cargo build --target wasm32-unknown-unknown --release
 ```
 The binary file to deploy will be at `target/wasm32-unknown-unknown/release/contract.wasm`.
-
-## CW20 Token Demo
-
-```bash
-cd dapps/cw20
-yarn
-yarn dev
-```
-
-Now a demo dapp is running at [localhost:3000](http://localhost:3000).
 
 ## CosmWasm AO SDK
 
