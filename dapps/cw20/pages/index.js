@@ -1,4 +1,5 @@
 const CWAO = require("cwao")
+const { ChakraProvider, useToast } = require("@chakra-ui/react")
 const lf = require("localforage")
 const { Input, Flex, Box } = require("@chakra-ui/react")
 const { useState, useEffect } = require("react")
@@ -32,6 +33,7 @@ export default function Home() {
   const [sendTo, setSendTo] = useState("")
   const [sendAmount, setSendAmount] = useState("10")
   const [loading, setLoading] = useState(null)
+  const toast = useToast()
   const getBalance = async (id, addr) => {
     const addr32 = toBech32(addr, "ao")
     const cwao = new CWAO({ wallet: arweaveWallet })
@@ -65,6 +67,17 @@ export default function Home() {
     })()
   }, [address])
 
+  const popup = (title, status = "info") =>
+    toast({
+      title,
+      status,
+      duration: 3000,
+      variant: "left-accent",
+      position: "bottom-right",
+      isClosable: true,
+      containerStyle: { margin: "20px" },
+    })
+
   const mintAR = async () => {
     const cwao = new CWAO({ wallet: arweaveWallet })
     const addr = await arweaveWallet.getActiveAddress()
@@ -94,6 +107,7 @@ export default function Home() {
     const balance = (BigInt(_balance) / BigInt("1000000000000")).toString()
     setBalanceAR(balance)
     if (balance === "0") await mintAR()
+    popup("Wallet Connected")
   }
   const Header = () => (
     <Flex height="70px" align="center">
@@ -140,7 +154,7 @@ export default function Home() {
       </Box>
     </Flex>
   )
-  const Setup = () => (
+  const Setup = (
     <Box>
       <Box sx={{ textDecoration: "underline" }}>1. Connect Arweave Wallet</Box>
       {address ? (
@@ -169,7 +183,9 @@ export default function Home() {
             cursor: "pointer",
             ":hover": { opacity: 0.75 },
           }}
-          onClick={async () => await connect()}
+          onClick={async () => {
+            await connect()
+          }}
         >
           Connect Wallet
         </Flex>
@@ -216,6 +232,7 @@ export default function Home() {
               const mod_id = await cwao.deploy(binary)
               setModule(mod_id)
               await lf.setItem("module", mod_id)
+              popup("CW20 Module Deployed")
             }
             setLoading(null)
           }}
@@ -268,6 +285,7 @@ export default function Home() {
               setScheduler(addr)
               await lf.setItem("scheduler", addr)
               setLoading(null)
+              popup("Scheduler Registered")
             }
           }}
         >
@@ -456,6 +474,7 @@ export default function Home() {
                   setTokens(new_tokens)
                   await lf.setItem("tokens", new_tokens)
                   try {
+                    popup("Token Created")
                     await getBalance(pr.id, tokenInitialHolder)
                     setTab("wallet")
                   } catch (e) {
@@ -473,7 +492,7 @@ export default function Home() {
         {loading === "token" ? (
           <Box as="i" className="fas fa-spin fa-circle-notch" />
         ) : (
-          "Mint Token"
+          "Generate Token"
         )}
       </Flex>
     </>
@@ -581,6 +600,7 @@ export default function Home() {
                         })
                         setTimeout(async () => {
                           try {
+                            popup("Token Transferred")
                             const _balance = (
                               await cwao.query({
                                 process: send,
@@ -618,77 +638,83 @@ export default function Home() {
     </>
   )
   return (
-    <Flex direction="column" minH="100%">
-      <style jsx global>{`
-        html,
-        body,
-        #__next {
-          height: 100%;
-          color: #333;
-        }
-      `}</style>
-      <Header />
-      <Flex justify="center" p={4}>
-        {map(v => {
-          return (
-            <Flex
-              mx={4}
-              justify="center"
-              bg={v.key === tab ? "#eee" : ""}
-              w="100px"
-              py={2}
-              sx={{
-                borderRadius: "3px",
-                cursor: "pointer",
-                ":hover": { opacity: 0.75 },
-              }}
-              onClick={() => setTab(v.key)}
-            >
-              {v.name}
-            </Flex>
-          )
-        })([
-          { key: "misc", name: "Setup" },
-          { key: "wallet", name: "Tokens" },
-          { key: "mint", name: "Mint" },
-          { key: "dex", name: "DEX" },
-        ])}
+    <ChakraProvider>
+      <Flex direction="column" minH="100%">
+        <style jsx global>{`
+          html,
+          body,
+          #__next {
+            height: 100%;
+            color: #333;
+          }
+        `}</style>
+        <Header />
+        <Flex justify="center" p={4}>
+          {map(v => {
+            return (
+              <Flex
+                mx={4}
+                justify="center"
+                bg={v.key === tab ? "#eee" : ""}
+                w="100px"
+                py={2}
+                sx={{
+                  borderRadius: "3px",
+                  cursor: "pointer",
+                  ":hover": { opacity: 0.75 },
+                }}
+                onClick={() => setTab(v.key)}
+              >
+                {v.name}
+              </Flex>
+            )
+          })([
+            { key: "misc", name: "Setup" },
+            { key: "wallet", name: "Tokens" },
+            { key: "mint", name: "Mint" },
+            { key: "dex", name: "DEX" },
+          ])}
+        </Flex>
+        <Flex justify="center" p={4}>
+          <Box
+            maxW="700px"
+            w="100%"
+            bg="#eee"
+            p={address !== null && tab === "wallet" ? 0 : 8}
+            sx={{ borderRadius: "5px" }}
+          >
+            {!address ? (
+              Setup
+            ) : tab === "wallet" ? (
+              Wallet
+            ) : tab === "mint" ? (
+              !scheduler ? (
+                Setup
+              ) : (
+                Mint
+              )
+            ) : tab === "misc" ? (
+              Setup
+            ) : tab === "dex" ? (
+              <DEX />
+            ) : null}
+          </Box>
+        </Flex>
+        <Flex flex={1}></Flex>
+        <Flex p={6} justify="center">
+          <Box
+            as="a"
+            target="_blank"
+            href="https://github.com/weavedb/cosmwasm-ao"
+            sx={{
+              cursor: "pointer",
+              ":hover": { opacity: 0.75 },
+            }}
+          >
+            CosmWasm AO
+          </Box>
+        </Flex>
       </Flex>
-      <Flex justify="center" p={4}>
-        <Box
-          maxW="700px"
-          w="100%"
-          bg="#eee"
-          p={address !== null && tab === "wallet" ? 0 : 8}
-          sx={{ borderRadius: "5px" }}
-        >
-          {!address ? (
-            <Setup />
-          ) : tab === "wallet" ? (
-            Wallet
-          ) : tab === "mint" ? (
-            Mint
-          ) : tab === "misc" ? (
-            <Setup />
-          ) : tab === "dex" ? (
-            <DEX />
-          ) : null}
-        </Box>
-      </Flex>
-      <Flex flex={1}></Flex>
-      <Flex p={6} justify="center">
-        <Box
-          as="a"
-          target="_blank"
-          href="https://github.com/weavedb/cosmwasm-ao"
-          sx={{
-            cursor: "pointer",
-            ":hover": { opacity: 0.75 },
-          }}
-        >
-          CosmWasm AO
-        </Box>
-      </Flex>
-    </Flex>
+    </ChakraProvider>
   )
 }
