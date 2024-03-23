@@ -86,3 +86,12 @@ await cwao.execute({ process: process.id, func: "Add", input: { num: 2 } })
 const result = await cwao.query({process:process.id, func: "Num", input: {}})
 
 ```
+## CW20 Token Demo
+
+```bash
+cd dapps/cw20
+yarn
+yarn dev
+```
+
+Now a demo dapp is running at [localhost:3000](http://localhost:3000).
