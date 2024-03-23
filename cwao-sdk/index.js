@@ -50,8 +50,8 @@ class CWAO {
   async deploy(
     mod,
     tags = [
-      { name: "Data-Protocol", value: "wdb" },
-      { name: "Variant", value: "wdb.TN.1" },
+      { name: "Data-Protocol", value: "cwao" },
+      { name: "Variant", value: "cwao.TN.1" },
       { name: "Type", value: "Module" },
       { name: "Module-Format", value: "wasm32-unknown-unknown" },
       { name: "Input-Encoding", value: "JSON-V1" },
@@ -75,8 +75,8 @@ class CWAO {
     url,
     ttl = 1000 * 60 * 60,
     tags = [
-      { name: "Data-Protocol", value: "wdb" },
-      { name: "Variant", value: "wdb.TN.1" },
+      { name: "Data-Protocol", value: "cwao" },
+      { name: "Variant", value: "cwao.TN.1" },
       { name: "Type", value: "Scheduler-Location" },
     ],
   }) {
@@ -98,8 +98,8 @@ class CWAO {
     scheduler,
     input,
     tags = [
-      { name: "Data-Protocol", value: "wdb" },
-      { name: "Variant", value: "wdb.TN.1" },
+      { name: "Data-Protocol", value: "cwao" },
+      { name: "Variant", value: "cwao.TN.1" },
       { name: "Type", value: "Process" },
       { name: "Module", value: module },
       { name: "Scheduler", value: scheduler },
@@ -121,14 +121,14 @@ class CWAO {
     }).then(r => r.json())
   }
 
-  async execute({ process, func, input = {}, query = false }) {
+  async execute({ process, action, input = {}, query = false }) {
     const signer = await this.getSigner()
     let tags = [
-      { name: "Data-Protocol", value: "wdb" },
-      { name: "Variant", value: "wdb.TN.1" },
+      { name: "Data-Protocol", value: "cwao" },
+      { name: "Variant", value: "cwao.TN.1" },
       { name: "Type", value: "Message" },
       { name: "Input", value: JSON.stringify(input) },
-      { name: "Function", value: func },
+      { name: "Action", value: action },
     ]
     if (query) tags.push({ name: "Read-Only", value: "True" })
     const pr = createData("", signer, {
@@ -144,8 +144,8 @@ class CWAO {
     }).then(r => r.json())
   }
 
-  async query({ process, func, input = {} }) {
-    const { id } = await this.execute({ process, func, input, query: true })
+  async query({ process, action, input = {} }) {
+    const { id } = await this.execute({ process, action, input, query: true })
     await sleep(1000)
     const result = await fetch(
       `${this.cu_url}/result/${id}/?process-id=${process}`,

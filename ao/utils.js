@@ -7,7 +7,7 @@ const parse = tags => {
     Scheduler: "scheduler",
     Num: "num",
     Input: "input",
-    Function: "function",
+    Action: "action",
     Url: "url",
     Reply_On: "reply_on",
     Reply_Id: "reply_id",

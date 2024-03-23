@@ -152,12 +152,12 @@ class CU extends Base {
         }
         let res = null
         if (tags.read_only === "True") {
-          res = this.vms[pid].query(env, { [tags.function]: input })
-        } else if (tags.function === "reply") {
+          res = this.vms[pid].query(env, { [tags.action]: input })
+        } else if (tags.action === "reply") {
           res = this.vms[pid].reply(env, input)
         } else {
           res = this.vms[pid].execute(env, info, {
-            [tags.function]: input,
+            [tags.action]: input,
           })
         }
         this.results[pid][id] = res.json
@@ -245,7 +245,7 @@ class CU extends Base {
                     result: { error: qres.error },
                   }),
                 },
-                { name: "Function", value: "reply" },
+                { name: "Action", value: "reply" },
                 { name: "From-Process", value: pid },
               ]
               resp.Messages.push({
@@ -279,7 +279,7 @@ class CU extends Base {
                             result: { ok: { events: [], data: qres.ok.data } },
                           }),
                         },
-                        { name: "Function", value: "reply" },
+                        { name: "Action", value: "reply" },
                         { name: "From-Process", value: pid },
                       ]
                       resp.Messages.push({
@@ -300,7 +300,7 @@ class CU extends Base {
                     { name: "Variant", value: "wdb.TN.1" },
                     { name: "Type", value: "Message" },
                     { name: "Input", value: JSON.stringify(_msg[k]) },
-                    { name: "Function", value: k },
+                    { name: "Action", value: k },
                     { name: "From-Process", value: pid },
                   ]
                   if (reply_on) {

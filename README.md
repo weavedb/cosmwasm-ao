@@ -90,9 +90,9 @@ const process = await cwao.instantiate({
 })
 
 // execute contract
-await cwao.execute({ process: process.id, func: "Add", input: { num: 2 } })
+await cwao.execute({ process: process.id, action: "Add", input: { num: 2 } })
 
 // query contract
-const result = await cwao.query({process:process.id, func: "Num", input: {}})
+const result = await cwao.query({process:process.id, action: "Num", input: {}})
 
 ```
