@@ -22,8 +22,8 @@ export default function Home() {
   const [to, setTo] = useState("")
   const [send, setSend] = useState(null)
   const [tab, setTab] = useState("misc")
-  const [tokenName, setTokenName] = useState("CosmWasm AO Token")
-  const [tokenSymbol, setTokenSymbol] = useState("CWAO")
+  const [tokenName, setTokenName] = useState("")
+  const [tokenSymbol, setTokenSymbol] = useState("")
   const [tokenCap, setTokenCap] = useState("100000000")
   const [tokenDecimals, setTokenDecimals] = useState("18")
   const [tokenInitialHolder, setTokenInitialHolder] = useState("")
@@ -286,11 +286,13 @@ export default function Home() {
       </Box>
     </Box>
   )
+
   const DEX = () => (
     <Flex height="250px" justify="center" align="center">
       Coming Soon...
     </Flex>
   )
+  const ok_mint = !/^\s*$/.test(tokenName) & !/^\s*$/.test(tokenSymbol)
   const Mint = (
     <>
       <Flex>
@@ -363,7 +365,7 @@ export default function Home() {
         mx={2}
         mt={6}
         justify="center"
-        bg={"#333"}
+        bg={ok_mint ? "#333" : "#bbb"}
         color="white"
         h="40px"
         align="center"
@@ -374,62 +376,75 @@ export default function Home() {
           ":hover": { opacity: 0.75 },
         }}
         onClick={async () => {
-          if (!loading) {
+          if (!loading && ok_mint) {
             setLoading("token")
-            const cwao = new CWAO({ wallet: arweaveWallet })
-            const addr32 = toBech32(tokenInitialHolder, "ao")
-            const input = {
-              name: tokenName,
-              symbol: tokenSymbol,
-              decimals: +tokenDecimals,
-              initial_balances: [
-                { address: addr32, amount: tokenInitialAmount },
-              ],
-              mint: {
-                minter: addr32,
-                cap: tokenCap,
-              },
-            }
-            const pr = await cwao.instantiate({
-              module,
-              scheduler,
-              input,
-            })
-            setToken(pr.id)
-            setTimeout(async () => {
-              const _tokens = await cwao.query({
-                process: pr.id,
-                func: "token_info",
-                input: {},
+            try {
+              const cwao = new CWAO({ wallet: arweaveWallet })
+              const addr32 = toBech32(tokenInitialHolder, "ao")
+              const input = {
+                name: tokenName,
+                symbol: tokenSymbol,
+                decimals: +tokenDecimals,
+                initial_balances: [
+                  { address: addr32, amount: tokenInitialAmount },
+                ],
+                mint: {
+                  minter: addr32,
+                  cap: tokenCap,
+                },
+              }
+              const pr = await cwao.instantiate({
+                module,
+                scheduler,
+                input,
               })
+              setToken(pr.id)
+              setTimeout(async () => {
+                const _tokens = await cwao.query({
+                  process: pr.id,
+                  func: "token_info",
+                  input: {},
+                })
+                setLoading(null)
+                if (equals(_tokens, [])) {
+                  alert("something went wrong")
+                  return
+                }
+                if (_tokens.name) {
+                  setTokenName("")
+                  setTokenSymbol("")
+                  setTokens(append({ addr: pr.id, info: _tokens }, tokens))
+                  try {
+                    const _balance = (
+                      await cwao.query({
+                        process: pr.id,
+                        func: "balance",
+                        input: { address: addr32 },
+                      })
+                    ).balance
+                    setBalances(assoc(pr.id, _balance, balances))
+                    setTab("wallet")
+                  } catch (e) {
+                    alert("something went wrong")
+                  }
+                }
+              }, 3000)
+            } catch (e) {
               setLoading(null)
-              if (equals(_tokens, [])) {
-                alert("something went wrong")
-                return
-              }
-              if (_tokens.name) {
-                setTokens(append({ addr: pr.id, info: _tokens }, tokens))
-                const _balance = (
-                  await cwao.query({
-                    process: pr.id,
-                    func: "balance",
-                    input: { address: addr32 },
-                  })
-                ).balance
-                setBalances(assoc(pr.id, _balance, balances))
-              }
-            }, 3000)
+              alert("something went wrong")
+            }
           }
         }}
       >
         {loading === "token" ? (
           <Box as="i" className="fas fa-spin fa-circle-notch" />
         ) : (
-          "        Mint Token"
+          "Mint Token"
         )}
       </Flex>
     </>
   )
+  const ok_send = +sendAmount > 0 && !/^\s*$/.test(sendTo)
   const Wallet = (
     <>
       {send ? null : (
@@ -507,40 +522,50 @@ export default function Home() {
                   mx={2}
                   mt={6}
                   justify="center"
-                  bg={"#333"}
+                  bg={ok_send ? "#333" : "#bbb"}
                   color="white"
                   h="40px"
                   align="center"
                   py={2}
                   sx={{
                     borderRadius: "3px",
-                    cursor: "pointer",
+                    cursor: ok_send ? "pointer" : "default",
                     ":hover": { opacity: 0.75 },
                   }}
                   onClick={async () => {
-                    if (!loading) {
+                    if (!loading && ok_send) {
                       setLoading("send")
-                      const cwao = new CWAO({ wallet: arweaveWallet })
-                      const recipient = toBech32(sendTo, "ao")
-                      const addr = await arweaveWallet.getActiveAddress()
-                      const from = toBech32(addr, "ao")
-                      await cwao.execute({
-                        process: token,
-                        func: "transfer",
-                        input: { recipient, amount: sendAmount },
-                      })
-
-                      setTimeout(async () => {
-                        const _balance = (
-                          await cwao.query({
-                            process: send,
-                            func: "balance",
-                            input: { address: from },
-                          })
-                        ).balance
-                        setBalances(assoc(send, _balance, balances))
+                      try {
+                        const cwao = new CWAO({ wallet: arweaveWallet })
+                        const recipient = toBech32(sendTo, "ao")
+                        const addr = await arweaveWallet.getActiveAddress()
+                        const from = toBech32(addr, "ao")
+                        await cwao.execute({
+                          process: token,
+                          func: "transfer",
+                          input: { recipient, amount: sendAmount },
+                        })
+                        setTimeout(async () => {
+                          try {
+                            const _balance = (
+                              await cwao.query({
+                                process: send,
+                                func: "balance",
+                                input: { address: from },
+                              })
+                            ).balance
+                            setBalances(assoc(send, _balance, balances))
+                            setSendTo("")
+                            setLoading(null)
+                          } catch (e) {
+                            alert("something went wrong")
+                            setLoading(null)
+                          }
+                        }, 3000)
+                      } catch (e) {
+                        alert("something went wrong")
                         setLoading(null)
-                      }, 3000)
+                      }
                     }
                   }}
                 >
