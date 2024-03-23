@@ -1,9 +1,9 @@
 const CWAO = require("cwao")
-const { Flex, Box } = require("@chakra-ui/react")
+const { Input, Flex, Box } = require("@chakra-ui/react")
 const { useState } = require("react")
 const bech32 = require("bech32")
 const base64url = require("base64url")
-const { map } = require("ramda")
+const { map, append } = require("ramda")
 function toBech32(arweaveAddress, prefix = "ao") {
   const decodedBytes = base64url.toBuffer(arweaveAddress)
   const words = bech32.toWords(decodedBytes)
@@ -15,18 +15,25 @@ export default function Home() {
   const [module, setModule] = useState(null)
   const [scheduler, setScheduler] = useState(null)
   const [token, setToken] = useState(null)
+  const [tokens, setTokens] = useState([])
   const [balance, setBalance] = useState(0)
   const [balanceAR, setBalanceAR] = useState("0")
   const [address, setAddress] = useState(null)
   const [to, setTo] = useState("")
   const [tab, setTab] = useState("misc")
+  const [tokenName, setTokenName] = useState("CosmWasm AO Token")
+  const [tokenSymbol, setTokenSymbol] = useState("CWAO")
+  const [tokenCap, setTokenCap] = useState("100000000")
+  const [tokenDecimals, setTokenDecimals] = useState("18")
+  const [tokenInitialHolder, setTokenInitialHolder] = useState("")
+  const [tokenInitialAmount, setTokenInitialAmount] = useState("1000000")
   const body = balance ? (
     <>
       <div>Module Proccess ID: {module}</div>
       <div>Scheduler Address: {scheduler}</div>
       <div>Balance: {balance}</div>
       <div>
-        <input value={to} onChange={e => setTo(e.target.value)} />
+        <Input value={to} onChange={e => setTo(e.target.value)} />
         <button
           onClick={async () => {
             const cwao = new CWAO({ wallet: arweaveWallet })
@@ -64,8 +71,8 @@ export default function Home() {
           const cwao = new CWAO({ wallet: arweaveWallet })
           const addr32 = toBech32(scheduler, "ao")
           const input = {
-            name: "WeaveDB Token",
-            symbol: "WDB",
+            name: "CosmWasm AO Token",
+            symbol: "CWAO",
             decimals: 18,
             initial_balances: [{ address: addr32, amount: "5000000" }],
             mint: {
@@ -157,6 +164,7 @@ export default function Home() {
     const cwao = new CWAO({ wallet: arweaveWallet })
     const addr = await arweaveWallet.getActiveAddress()
     setAddress(addr)
+    setTokenInitialHolder(addr)
     const _balance = await cwao.arweave.wallets.getBalance(addr)
     const balance = (BigInt(_balance) / BigInt("1000000000000")).toString()
     setBalanceAR(balance)
@@ -373,6 +381,131 @@ export default function Home() {
       Coming Soon...
     </Flex>
   )
+  const Mint = (
+    <>
+      <Flex>
+        <Box flex={1} px={2}>
+          <Box mb={1}>Token Name</Box>
+          <Input
+            value={tokenName}
+            onChange={e => setTokenName(e.target.value)}
+            bg="white"
+          />
+        </Box>
+        <Box flex={1} px={2}>
+          <Box mb={1}>Symbol</Box>
+          <Input
+            value={tokenSymbol}
+            onChange={e => setTokenSymbol(e.target.value)}
+            bg="white"
+          />
+        </Box>
+      </Flex>
+      <Flex mt={2}>
+        <Box px={2} flex={1}>
+          <Box mb={1}>Cap</Box>
+          <Input
+            value={tokenCap}
+            onChange={e => {
+              if (!Number.isNaN(+e.target.value)) {
+                setTokenCap(e.target.value)
+              }
+            }}
+            bg="white"
+          />
+        </Box>
+        <Box px={2} flex={1}>
+          <Box mb={1}>Decimals</Box>
+          <Input
+            value={tokenDecimals}
+            onChange={e => {
+              if (!Number.isNaN(+e.target.value)) {
+                setTokenDecimals(e.target.value)
+              }
+            }}
+            bg="white"
+          />
+        </Box>
+      </Flex>
+      <Flex mt={2}>
+        <Box flex={1} px={2}>
+          <Box mb={1}>Initial Holder</Box>
+          <Input
+            value={tokenInitialHolder}
+            onChange={e => setTokenInitialHolder(e.target.value)}
+            bg="white"
+          />
+        </Box>
+        <Box flex={1} px={2}>
+          <Box mb={1}>Amount</Box>
+          <Input
+            value={tokenInitialAmount}
+            onChange={e => {
+              if (!Number.isNaN(+e.target.value)) {
+                setTokenInitialAmount(e.target.value)
+              }
+            }}
+            bg="white"
+          />
+        </Box>
+      </Flex>
+      <Flex
+        mx={2}
+        mt={6}
+        justify="center"
+        bg={"#333"}
+        color="white"
+        py={2}
+        sx={{
+          borderRadius: "3px",
+          cursor: "pointer",
+          ":hover": { opacity: 0.75 },
+        }}
+        onClick={async () => {
+          const cwao = new CWAO({ wallet: arweaveWallet })
+          const addr32 = toBech32(tokenInitialHolder, "ao")
+          const input = {
+            name: tokenName,
+            symbol: tokenSymbol,
+            decimals: +tokenDecimals,
+            initial_balances: [{ address: addr32, amount: tokenInitialAmount }],
+            mint: {
+              minter: addr32,
+              cap: tokenCap,
+            },
+          }
+          const pr = await cwao.instantiate({
+            module,
+            scheduler,
+            input,
+          })
+          setToken(pr.id)
+          setTimeout(async () => {
+            const _tokens = await cwao.query({
+              process: pr.id,
+              func: "token_info",
+              input: {},
+            })
+            if (_tokens.name) {
+              setTokens(append(_tokens, tokens))
+              setBalance(
+                (
+                  await cwao.query({
+                    process: pr.id,
+                    func: "balance",
+                    input: { address: addr32 },
+                  })
+                ).balance,
+              )
+            }
+          }, 3000)
+        }}
+      >
+        Mint Token
+      </Flex>
+    </>
+  )
+
   return (
     <Flex direction="column" minH="100%">
       <style jsx global>{`
@@ -412,7 +545,13 @@ export default function Home() {
       </Flex>
       <Flex justify="center" p={4}>
         <Box maxW="700px" w="100%" bg="#eee" p={8} sx={{ borderRadius: "5px" }}>
-          {tab === "misc" ? <Setup /> : tab === "dex" ? <DEX /> : null}
+          {tab === "mint" ? (
+            Mint
+          ) : tab === "misc" ? (
+            <Setup />
+          ) : tab === "dex" ? (
+            <DEX />
+          ) : null}
         </Box>
       </Flex>
       <Flex flex={1}></Flex>
