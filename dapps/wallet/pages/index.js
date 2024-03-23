@@ -368,6 +368,11 @@ export default function Home() {
       </Box>
     </Box>
   )
+  const DEX = () => (
+    <Flex height="250px" justify="center" align="center">
+      Coming Soon...
+    </Flex>
+  )
   return (
     <Flex direction="column" minH="100%">
       <style jsx global>{`
@@ -407,7 +412,7 @@ export default function Home() {
       </Flex>
       <Flex justify="center" p={4}>
         <Box maxW="700px" w="100%" bg="#eee" p={8} sx={{ borderRadius: "5px" }}>
-          {tab === "misc" ? <Setup /> : null}
+          {tab === "misc" ? <Setup /> : tab === "dex" ? <DEX /> : null}
         </Box>
       </Flex>
       <Flex flex={1}></Flex>
