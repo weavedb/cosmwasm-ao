@@ -20,6 +20,7 @@ export default function Home() {
   const [balanceAR, setBalanceAR] = useState("0")
   const [address, setAddress] = useState(null)
   const [to, setTo] = useState("")
+  const [send, setSend] = useState(null)
   const [tab, setTab] = useState("misc")
   const [tokenName, setTokenName] = useState("CosmWasm AO Token")
   const [tokenSymbol, setTokenSymbol] = useState("CWAO")
@@ -27,116 +28,9 @@ export default function Home() {
   const [tokenDecimals, setTokenDecimals] = useState("18")
   const [tokenInitialHolder, setTokenInitialHolder] = useState("")
   const [tokenInitialAmount, setTokenInitialAmount] = useState("1000000")
-  const body = balances ? (
-    <>
-      <div>
-        <Input value={to} onChange={e => setTo(e.target.value)} />
-        <button
-          onClick={async () => {
-            const cwao = new CWAO({ wallet: arweaveWallet })
-            const receiver = toBech32(to, "ao")
-            const addr = await arweaveWallet.getActiveAddress()
-            const sender = toBech32(addr, "ao")
-            await cwao.execute({
-              process: token,
-              func: "transfer",
-              input: { recipient: receiver, amount: "2000000" },
-            })
-            setTimeout(async () => {
-              setBalance(
-                (
-                  await cwao.query({
-                    process: token,
-                    func: "balance",
-                    input: { address: sender },
-                  })
-                ).balance,
-              )
-            }, 3000)
-          }}
-        >
-          Transfer Token
-        </button>
-      </div>
-    </>
-  ) : scheduler ? (
-    <>
-      <div>Module Proccess ID: {module}</div>
-      <div>Scheduler Address: {scheduler}</div>
-      <button
-        onClick={async () => {
-          const cwao = new CWAO({ wallet: arweaveWallet })
-          const addr32 = toBech32(scheduler, "ao")
-          const input = {
-            name: "CosmWasm AO Token",
-            symbol: "CWAO",
-            decimals: 18,
-            initial_balances: [{ address: addr32, amount: "5000000" }],
-            mint: {
-              minter: addr32,
-              cap: "1000000000",
-            },
-          }
-          const pr = await cwao.instantiate({
-            module,
-            scheduler,
-            input,
-          })
-          setToken(pr.id)
-          setTimeout(async () => {
-            console.log(
-              await cwao.query({
-                process: pr.id,
-                func: "token_info",
-                input: {},
-              }),
-            )
-            setBalance(
-              (
-                await cwao.query({
-                  process: pr.id,
-                  func: "balance",
-                  input: { address: addr32 },
-                })
-              ).balance,
-            )
-          }, 3000)
-        }}
-      >
-        Add Token
-      </button>
-    </>
-  ) : module ? (
-    <>
-      <div>Module Proccess ID: {module}</div>
-      <button
-        onClick={async () => {
-          const cwao = new CWAO({ wallet: arweaveWallet })
-          const addr = await arweaveWallet.getActiveAddress()
-          await cwao.arweave.api.get(`mint/${addr}/10000000000000000`)
-          await cwao.addScheduler({ url: "http://localhost:1986" })
-          setScheduler(addr)
-        }}
-      >
-        Add Scheduler
-      </button>
-    </>
-  ) : (
-    <button
-      onClick={async () => {
-        const cwao = new CWAO({ wallet: arweaveWallet })
-        const addr = await arweaveWallet.getActiveAddress()
-        await cwao.arweave.api.get(`mint/${addr}/10000000000000000`)
-        const binary = Buffer.from(
-          await fetch("/cw20.wasm").then(v => v.arrayBuffer()),
-        )
-        const mod_id = await cwao.deploy(binary)
-        setModule(mod_id)
-      }}
-    >
-      Deploy CW20 Module
-    </button>
-  )
+  const [sendTo, setSendTo] = useState("")
+  const [sendAmount, setSendAmount] = useState("10")
+
   const mintAR = async () => {
     const cwao = new CWAO({ wallet: arweaveWallet })
     const addr = await arweaveWallet.getActiveAddress()
@@ -495,7 +389,6 @@ export default function Home() {
                   input: { address: addr32 },
                 })
               ).balance
-              console.log(_balance)
               setBalances(assoc(pr.id, _balance, balances))
             }
           }, 3000)
@@ -507,27 +400,118 @@ export default function Home() {
   )
   const Wallet = (
     <>
-      <Flex align="center" p={4} fontSize="20px">
-        <Flex pl={4}>
-          <Box mr={2}>{balanceAR}</Box>
-          <Box ml={2}>AR</Box>
-        </Flex>
-        <Box flex={1} />
-        <Flex mr={4} fontSize="14px"></Flex>
-      </Flex>
-      {map(v => {
-        return (
-          <Flex align="center" p={4} fontSize="20px">
-            <Flex pl={4}>
-              <Box mr={2}>{balances[v.addr]}</Box>
-              <Box ml={2}>{v.info.symbol}</Box>
-            </Flex>
-            <Box flex={1} />
-            <Flex mr={4} fontSize="14px">
-              Send
-            </Flex>
+      {send ? null : (
+        <Flex align="center" p={4} fontSize="20px">
+          <Flex pl={4}>
+            <Box mr={2}>{balanceAR}</Box>
+            <Box ml={2}>AR</Box>
           </Flex>
-        )
+          <Box flex={1} />
+          <Flex mr={4} fontSize="14px"></Flex>
+        </Flex>
+      )}
+      {map(v => {
+        return !send || send === v.addr ? (
+          <>
+            <Flex align="center" p={4} fontSize="20px">
+              <Flex pl={4}>
+                <Box mr={2}>{balances[v.addr]}</Box>
+                <Box ml={2}>{v.info.symbol}</Box>
+              </Flex>
+              <Box flex={1} />
+              {send === v.addr ? (
+                <Flex
+                  mr={4}
+                  fontSize="14px"
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  onClick={() => setSend(null)}
+                >
+                  Back
+                </Flex>
+              ) : (
+                <Flex
+                  mr={4}
+                  fontSize="14px"
+                  sx={{
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  onClick={() => setSend(v.addr)}
+                >
+                  Send
+                </Flex>
+              )}
+            </Flex>
+            {send === v.addr ? (
+              <Box px={6} pb={6}>
+                <Flex>
+                  <Box flex={1} px={2}>
+                    <Box mb={1}>To</Box>
+                    <Input
+                      value={sendTo}
+                      onChange={e => setSendTo(e.target.value)}
+                      bg="white"
+                    />
+                  </Box>
+                </Flex>
+                <Flex mt={2}>
+                  <Box flex={1} px={2}>
+                    <Box mb={1}>Amount</Box>
+                    <Input
+                      value={sendAmount}
+                      onChange={e => {
+                        if (!Number.isNaN(+e.target.value)) {
+                          setSendAmount(e.target.value)
+                        }
+                      }}
+                      bg="white"
+                    />
+                  </Box>
+                </Flex>
+                <Flex
+                  mx={2}
+                  mt={6}
+                  justify="center"
+                  bg={"#333"}
+                  color="white"
+                  py={2}
+                  sx={{
+                    borderRadius: "3px",
+                    cursor: "pointer",
+                    ":hover": { opacity: 0.75 },
+                  }}
+                  onClick={async () => {
+                    const cwao = new CWAO({ wallet: arweaveWallet })
+                    const recipient = toBech32(sendTo, "ao")
+                    const addr = await arweaveWallet.getActiveAddress()
+                    const from = toBech32(addr, "ao")
+                    await cwao.execute({
+                      process: token,
+                      func: "transfer",
+                      input: { recipient, amount: sendAmount },
+                    })
+
+                    setTimeout(async () => {
+                      const _balance = (
+                        await cwao.query({
+                          process: send,
+                          func: "balance",
+                          input: { address: from },
+                        })
+                      ).balance
+                      setBalances(assoc(send, _balance, balances))
+                    }, 3000)
+                  }}
+                >
+                  Send Token
+                </Flex>
+              </Box>
+            ) : null}
+          </>
+        ) : null
       })(tokens)}
     </>
   )
