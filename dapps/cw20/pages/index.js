@@ -1,6 +1,7 @@
 const CWAO = require("cwao")
+const lf = require("localforage")
 const { Input, Flex, Box } = require("@chakra-ui/react")
-const { useState } = require("react")
+const { useState, useEffect } = require("react")
 const bech32 = require("bech32")
 const base64url = require("base64url")
 const { equals, assoc, map, append } = require("ramda")
@@ -31,6 +32,39 @@ export default function Home() {
   const [sendTo, setSendTo] = useState("")
   const [sendAmount, setSendAmount] = useState("10")
   const [loading, setLoading] = useState(null)
+  const getBalance = async (id, addr) => {
+    const addr32 = toBech32(addr, "ao")
+    const cwao = new CWAO({ wallet: arweaveWallet })
+    const _balance = (
+      await cwao.query({
+        process: id,
+        func: "balance",
+        input: { address: addr32 },
+      })
+    ).balance
+    setBalances(assoc(id, _balance, balances))
+  }
+  useEffect(() => {
+    ;(async () => {
+      const _module = await lf.getItem("module")
+      if (_module) setModule(_module)
+      const _scheduler = await lf.getItem("scheduler")
+      if (_scheduler) setScheduler(_scheduler)
+      const _tokens = await lf.getItem("tokens")
+      if (_tokens) setTokens(_tokens)
+    })()
+  }, [])
+
+  useEffect(() => {
+    ;(async () => {
+      if (address) {
+        for (const v of tokens) {
+          await getBalance(v.addr, address)
+        }
+      }
+    })()
+  }, [address])
+
   const mintAR = async () => {
     const cwao = new CWAO({ wallet: arweaveWallet })
     const addr = await arweaveWallet.getActiveAddress()
@@ -181,6 +215,7 @@ export default function Home() {
               )
               const mod_id = await cwao.deploy(binary)
               setModule(mod_id)
+              await lf.setItem("module", mod_id)
             }
             setLoading(null)
           }}
@@ -231,6 +266,7 @@ export default function Home() {
               const addr = await arweaveWallet.getActiveAddress()
               await cwao.addScheduler({ url: "http://localhost:1986" })
               setScheduler(addr)
+              await lf.setItem("scheduler", addr)
               setLoading(null)
             }
           }}
@@ -413,16 +449,14 @@ export default function Home() {
                 if (_tokens.name) {
                   setTokenName("")
                   setTokenSymbol("")
-                  setTokens(append({ addr: pr.id, info: _tokens }, tokens))
+                  const new_tokens = append(
+                    { addr: pr.id, info: _tokens },
+                    tokens,
+                  )
+                  setTokens(new_tokens)
+                  await lf.setItem("tokens", new_tokens)
                   try {
-                    const _balance = (
-                      await cwao.query({
-                        process: pr.id,
-                        func: "balance",
-                        input: { address: addr32 },
-                      })
-                    ).balance
-                    setBalances(assoc(pr.id, _balance, balances))
+                    await getBalance(pr.id, tokenInitialHolder)
                     setTab("wallet")
                   } catch (e) {
                     alert("something went wrong")
@@ -462,7 +496,7 @@ export default function Home() {
           <>
             <Flex align="center" p={4} fontSize="20px">
               <Flex pl={4}>
-                <Box mr={2}>{balances[v.addr]}</Box>
+                <Box mr={2}>{balances[v.addr] ?? 0}</Box>
                 <Box ml={2}>{v.info.symbol}</Box>
               </Flex>
               <Box flex={1} />
@@ -557,6 +591,7 @@ export default function Home() {
                             setBalances(assoc(send, _balance, balances))
                             setSendTo("")
                             setLoading(null)
+                            setSend(null)
                           } catch (e) {
                             alert("something went wrong")
                             setLoading(null)
@@ -624,10 +659,12 @@ export default function Home() {
           maxW="700px"
           w="100%"
           bg="#eee"
-          p={tab === "wallet" ? 0 : 8}
+          p={address !== null && tab === "wallet" ? 0 : 8}
           sx={{ borderRadius: "5px" }}
         >
-          {tab === "wallet" ? (
+          {!address ? (
+            <Setup />
+          ) : tab === "wallet" ? (
             Wallet
           ) : tab === "mint" ? (
             Mint
