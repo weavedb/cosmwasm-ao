@@ -92,59 +92,59 @@ describe("WDB", function () {
       scheduler: sch,
       input: { num: 1 },
     })
-    await cwao.execute({ process: pr.id, func: "Add", input: { num: 1 } }) // 1-5
-    await cwao.execute({ process: pr2.id, func: "Add", input: { num: 2 } }) // 2-3
+    await cwao.execute({ process: pr.id, action: "Add", input: { num: 1 } }) // 1-5
+    await cwao.execute({ process: pr2.id, action: "Add", input: { num: 2 } }) // 2-3
     await cwao.execute({
       process: pr.id,
-      func: "Add2",
+      action: "Add2",
       input: { num: 3, addr: pr2.id },
     }) // 2-6
     await cwao.execute({
       process: pr.id,
-      func: "Add3",
+      action: "Add3",
       input: { num: 1, addr: pr2.id },
     }) // 2-7, 1-6
     await sleep(500)
-    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
-      { num: 6 },
-    )
     expect(
-      await cwao.query({ process: pr2.id, func: "Num", input: {} }),
+      await cwao.query({ process: pr.id, action: "Num", input: {} }),
+    ).to.eql({ num: 6 })
+    expect(
+      await cwao.query({ process: pr2.id, action: "Num", input: {} }),
     ).to.eql({ num: 7 })
 
-    await cwao.execute({ process: pr.id, func: "Add5", input: { num: 2 } }) // 1-8
+    await cwao.execute({ process: pr.id, action: "Add5", input: { num: 2 } }) // 1-8
     await sleep(500)
-    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
-      { num: 8 },
-    )
+    expect(
+      await cwao.query({ process: pr.id, action: "Num", input: {} }),
+    ).to.eql({ num: 8 })
 
     await cwao.execute({
       process: pr.id,
-      func: "Add4",
+      action: "Add4",
       input: { num: 1, addr: pr2.id },
     }) // error
     await sleep(500)
-    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
-      { num: 11 },
-    )
+    expect(
+      await cwao.query({ process: pr.id, action: "Num", input: {} }),
+    ).to.eql({ num: 11 })
 
     await cwao.execute({
       process: pr.id,
-      func: "Add4",
+      action: "Add4",
       input: { num: 3, addr: pr2.id },
     }) // with data
     await sleep(500)
 
     expect(
-      await cwao.query({ process: pr2.id, func: "Num", input: {} }),
+      await cwao.query({ process: pr2.id, action: "Num", input: {} }),
     ).to.eql({ num: 10 })
 
-    expect(await cwao.query({ process: pr.id, func: "Num", input: {} })).to.eql(
-      { num: 14 },
-    )
+    expect(
+      await cwao.query({ process: pr.id, action: "Num", input: {} }),
+    ).to.eql({ num: 14 })
   })
 
-  it.only("should handle cw20 token", async () => {
+  it("should handle cw20 token", async () => {
     const _binary = await getModule(
       "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
     )
@@ -179,27 +179,27 @@ describe("WDB", function () {
     expect(
       await cwao.query({
         process: pr.id,
-        func: "balance",
+        action: "balance",
         input: { address: addr32 },
       }),
     ).to.eql({ balance: "5000000" })
     await cwao.execute({
       process: pr.id,
-      func: "transfer",
+      action: "transfer",
       input: { recipient: addr2_32, amount: "2000000" },
     })
     await sleep(500)
     expect(
       await cwao.query({
         process: pr.id,
-        func: "balance",
+        action: "balance",
         input: { address: addr2_32 },
       }),
     ).to.eql({ balance: "2000000" })
     expect(
       await cwao.query({
         process: pr.id,
-        func: "balance",
+        action: "balance",
         input: { address: addr32 },
       }),
     ).to.eql({ balance: "3000000" })
@@ -207,7 +207,7 @@ describe("WDB", function () {
     // test error
     const { id } = await cwao.execute({
       process: pr.id,
-      func: "transfer",
+      action: "transfer",
       input: { recipient: addr2_32, amount: "20000000" },
     })
     expect((await cwao.getMessage(id, pr.id)).Error).to.exist

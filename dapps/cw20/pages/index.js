@@ -41,7 +41,7 @@ export default function Home() {
       (
         await cwao.query({
           process: id,
-          func: "balance",
+          action: "balance",
           input: { address: addr32 },
         })
       )?.balance ?? "0"
@@ -457,7 +457,7 @@ export default function Home() {
               setTimeout(async () => {
                 const _tokens = await cwao.query({
                   process: pr.id,
-                  func: "token_info",
+                  action: "token_info",
                   input: {},
                 })
                 setLoading(null)
@@ -596,7 +596,7 @@ export default function Home() {
                         const from = toBech32(addr, "ao")
                         await cwao.execute({
                           process: token,
-                          func: "transfer",
+                          action: "transfer",
                           input: { recipient, amount: sendAmount },
                         })
                         setTimeout(async () => {
@@ -606,7 +606,7 @@ export default function Home() {
                               (
                                 await cwao.query({
                                   process: send,
-                                  func: "balance",
+                                  action: "balance",
                                   input: { address: from },
                                 })
                               )?.balance ?? "0"
