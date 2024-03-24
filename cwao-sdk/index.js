@@ -1,7 +1,7 @@
 let Arweave = require("arweave")
 const AOB = require("./aobundles")
 if (Arweave.default) Arweave = Arweave.default
-const { Bundle, bundleAndSignData } = require("arbundles")
+const { DataItem, bundleAndSignData } = require("arbundles")
 
 const sleep = x =>
   new Promise(res => {
@@ -34,6 +34,7 @@ class CWAO {
       graphql: this.graphql,
     })
   }
+
   async deploy(
     mod,
     tags = [
@@ -51,11 +52,13 @@ class CWAO {
     await this.arweave.transactions.post(tx)
     return tx.id
   }
+
   async getMessage(mid, pid) {
     return await fetch(`${this.cu_url}/result/${mid}?process-id=${pid}`).then(
       r => r.json(),
     )
   }
+
   async getSU() {
     return await fetch(`${this.su_url}`).then(r => r.json())
   }
@@ -79,14 +82,7 @@ class CWAO {
   }) {
     tags.push({ name: "Url", value: url })
     tags.push({ name: "Time-To-Live", value: Number(ttl).toString() })
-    const data = await this.aob.data({ tags })
-    const bundle = await bundleAndSignData([data], await this.aob.signer())
-    const tx = await this.arweave.createTransaction({ data: bundle.getRaw() })
-    tx.addTag("Bundle-Format", "binary")
-    tx.addTag("Bundle-Version", "2.0.0")
-    const id = bundle.getIds()[0]
-    await this.arweave.transactions.sign(tx, this.wallet)
-    await this.arweave.transactions.post(tx)
+    const { tx } = await this.aob.send({ tags })
     return tx.id
   }
 
@@ -102,9 +98,7 @@ class CWAO {
       { name: "Scheduler", value: scheduler },
     ],
   }) {
-    if (input) {
-      tags.push({ name: "Input", value: JSON.stringify(input) })
-    }
+    if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
     const data = await this.aob.data({ tags })
     return await fetch(this.mu_url, {
       method: "POST",
@@ -131,7 +125,9 @@ class CWAO {
       method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
+        Accept: "application/json",
       },
+      redirect: "follow",
       body: data.getRaw(),
     }).then(r => r.json())
   }

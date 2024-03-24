@@ -24,7 +24,6 @@ class SU extends Base {
     wallet,
   }) {
     super({ port, arweave, graphql, type: "SU", wallet })
-    this.txmap = {}
     this.pmap = {}
     this.processes = {}
     this.epoch = 0
@@ -33,25 +32,15 @@ class SU extends Base {
   async init() {
     this.server.post("/", async (req, res) => {
       try {
-        const tx = await this.arweave.createTransaction({
-          data: req.body,
-        })
-        let ids = []
-        // [TODO]: process mix bundle (read-only & non-read-only)
-        let read_only = false
+        let type = null
         const timestamp = Date.now()
-        for (let v of new Bundle(req.body).items) {
-          this.txmap[v.id] = tx.id
+        const bundle = new Bundle(req.body)
+        for (let v of bundle.items) {
           const m = parse(v.tags)
-          if (m.read_only === "True") read_only = true
-          ids.push(v.id)
-          const publicKeyBuffer = Buffer.from(v.owner, "base64url")
-          const hashBuffer = crypto
-            .createHash("sha256")
-            .update(publicKeyBuffer)
-            .digest()
-          const address = hashBuffer.toString("base64url")
+          if (m.read_only === "True") type = "read_only"
+          const address = this.aob.owner(v)
           if (m.type === "Message") {
+            type = "message"
             if (!this.pmap[v.target]) this.pmap[v.target] = []
             this.pmap[v.target].push({
               id: v.id,
@@ -60,6 +49,7 @@ class SU extends Base {
               item: v,
             })
           } else if (m.type === "Process") {
+            type = "process"
             this.processes[v.id] = {
               id: v.id,
               tx: Date.now(),
@@ -68,15 +58,25 @@ class SU extends Base {
             }
           }
         }
-        if (!read_only) {
-          tx.addTag("Bundle-Format", "binary")
-          tx.addTag("Bundle-Version", "2.0.0")
-          await this.arweave.transactions.sign(tx, this.wallet)
-          await this.arweave.transactions.post(tx)
+
+        if (type === "message") {
+          const bdata = this.aob.nest(bundle)
+          const assignment = await this.aob.data({}, bdata.rawData)
+          const bundle2 = await this.aob.bundle([assignment])
+          const { tx } = await this.aob.post(bundle2)
+          res.status(201)
+          res.json({ id: assignment.id, timestamp })
+        } else if (type === "process") {
+          const { tx } = await this.aob.post(bundle)
+          res.status(201)
+          res.json({ id: tx, timestamp })
+        } else if (type === "read_only") {
+          const tx = await this.aob.tx(bundle)
+          res.status(201)
+          res.json({ id: tx.id, timestamp })
         }
-        res.status(201)
-        res.json({ id: tx.id, timestamp })
       } catch (e) {
+        console.log(e)
         res.status(400)
         res.json({ error: "bad request" })
       }
