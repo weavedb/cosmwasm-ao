@@ -1,6 +1,6 @@
 const express = require("express")
 const Arweave = require("arweave")
-
+const { groupBy, map, prop } = require("ramda")
 const {
   Bundle,
   DataItem,
@@ -27,16 +27,10 @@ class MU extends Base {
     this.cu_url = cu_url
   }
   async send(item) {
-    const signer = new ArweaveSigner(this.wallet)
-    const dataItems = [item]
-    const bundle = await bundleAndSignData(dataItems, signer)
-    const tx = await this.arweave.createTransaction({ data: bundle.getRaw() })
-    const bd = new Bundle(tx.data)
-    const id = bd.getIds()[0]
-    const tags = parse(dataItems[0].tags)
+    const tags = parse(item.tags)
     let url = "http://localhost:1986"
     if (tags.type === "Message") {
-      url = await getSUByProcess(bd.items[0].target, this.graphql)
+      url = await getSUByProcess(item.target, this.graphql)
     } else if (tags.type === "Process") {
       url = await getSU(tags.scheduler, this.graphql)
     }
@@ -45,35 +39,89 @@ class MU extends Base {
       headers: {
         "Content-Type": "application/octet-stream",
       },
-      body: tx.data,
+      body: (await this.aob.bundle([item])).getRaw(),
     }).then(r => r.json())
     if (tags.type === "Message") {
-      fetch(`${this.cu_url}/result/${id}?process-id=${bd.items[0].target}`)
+      fetch(`${this.cu_url}/result/${item.id}?process-id=${item.target}`)
         .then(r => r.json())
         .then(async json => {
           if (json.Error) console.log(json.Error)
           for (let v of json.Messages ?? []) {
-            const signer = new ArweaveSigner(this.wallet)
-            const _item = createData("", signer, {
-              target: v.Target,
-              tags: v.Tags,
-            })
-            const _id = await this.send(_item)
+            const _id = await this.send(
+              await this.aob.data({
+                target: v.Target,
+                tags: v.Tags,
+              }),
+            )
           }
         })
         .catch(e => {
           console.log(e)
         })
     }
-    return id
+    return item.id
+  }
+  async verify(binary) {
+    let item = null
+    let valid = await DataItem.verify(binary)
+    if (valid) {
+      item = new DataItem(binary)
+      const tags = groupBy(prop("name"))(item.tags)
+      const type = this.aob.getType(tags)
+      const one = [1, 1]
+      const lte_one = [0, 1]
+      const zero_n = [0]
+      switch (type) {
+        case "Message":
+          valid = this.aob.verifyTags(tags, {
+            "Data-Protocol": [one],
+            Variant: [one],
+            Type: [one],
+            Load: [lte_one],
+            "Read-Only": [lte_one],
+            "From-Process": [lte_one],
+            "From-Module": [lte_one],
+            "Pushed-For": [lte_one],
+            Cast: [lte_one],
+          })
+          break
+        case "Process":
+          valid = this.aob.verifyTags(
+            tags,
+            {
+              "Data-Protocol": [one],
+              Variant: [one],
+              Type: [one],
+              Module: [one],
+              Scheduler: [one],
+              "Cron-Interval": [zero_n],
+              "Memory-Limit": [lte_one],
+              "Compute-Limit": [lte_one],
+              "Pushed-For": [lte_one],
+              Cast: [lte_one],
+            },
+            (v, k) => !/^Cron-Tag-.+$/.test(k) || v.length <= 1,
+          )
+          break
+        default:
+          valid = false
+      }
+    }
+    return { item, valid }
   }
   async init() {
     this.server.get("/", async (req, res) => {
       res.send("ao messenger unit")
     })
     this.server.post("/", async (req, res) => {
+      const { valid, item } = await this.verify(req.body)
+      if (!valid) {
+        res.status(400)
+        res.json({ error: "bad request" })
+        return
+      }
       try {
-        const id = await this.send(new DataItem(req.body))
+        const id = await this.send(item)
         res.json({ id })
       } catch (e) {
         res.status(400)

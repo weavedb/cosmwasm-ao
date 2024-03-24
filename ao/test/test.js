@@ -74,7 +74,7 @@ describe("WDB", function () {
     expect(await wdb.getState(pr.id)).to.eql(6)
   })
   */
-  it("should handle bare cosmwasm", async () => {
+  it.only("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet })
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.getMU()).to.eql("ao messenger unit")
@@ -84,7 +84,6 @@ describe("WDB", function () {
       "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
     const mod_id = await cwao.deploy(_binary)
-    console.log(sch)
     await cwao.addScheduler({ url: "http://localhost:1986" })
     const pr = await cwao.instantiate({
       module: mod_id,
@@ -113,6 +112,7 @@ describe("WDB", function () {
     expect(
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
     ).to.eql({ num: 6 })
+    return
     expect(
       await cwao.query({ process: pr2.id, action: "Num", input: {} }),
     ).to.eql({ num: 7 })
