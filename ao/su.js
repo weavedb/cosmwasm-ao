@@ -108,6 +108,7 @@ class SU extends Base {
         res.json({ error: "bad request" })
       }
     })
+
     this.server.get("/", async (req, res) => {
       res.json({
         Unit: "Scheduler",
@@ -116,6 +117,14 @@ class SU extends Base {
         Processes: keys(this.processes).sort(),
       })
     })
+
+    this.server.get("/timestamp", async (req, res) => {
+      res.json({
+        timestamp: Date.now(),
+        block_height: (await this.arweave.blocks.getCurrent()).height,
+      })
+    })
+
     this.server.get("/:process", async (req, res) => {
       try {
         let cursor = 0

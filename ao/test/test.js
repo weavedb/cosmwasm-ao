@@ -8,15 +8,9 @@ const { bech32 } = require("bech32")
 const base64url = require("base64url")
 
 function toBech32(arweaveAddress, prefix = "ao") {
-  // Decode the base64url Arweave address to get the original bytes
   const decodedBytes = base64url.toBuffer(arweaveAddress)
-
-  // Convert the bytes to Bech32 words
   const words = bech32.toWords(decodedBytes)
-
-  // Encode the words with the specified prefix to get the Bech32 address
   const bech32Address = bech32.encode(prefix, words)
-
   return bech32Address
 }
 
@@ -47,6 +41,8 @@ describe("WDB", function () {
     expect(await cwao.getMU()).to.eql("ao messenger unit")
     expect((await cwao.getCU()).address).to.eql(sch)
     expect((await cwao.getSU()).Address).to.eql(sch)
+    expect((await cwao.timestamp()).block_height).to.eql(0)
+
     const _binary = await getModule(
       "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
