@@ -1,6 +1,8 @@
 const crypto = require("crypto")
 const express = require("express")
 const Arweave = require("arweave")
+const { keys } = require("ramda")
+
 const {
   Bundle,
   DataItem,
@@ -13,7 +15,7 @@ const { parse } = require("./utils")
 const Base = require("./base")
 
 class SU extends Base {
-  constructor(
+  constructor({
     port = 1986,
     arweave = {
       host: "localhost",
@@ -21,14 +23,14 @@ class SU extends Base {
       protocol: "http",
     },
     graphql = "http://localhost:1984/graphql",
-  ) {
-    super(port, arweave, graphql, "SU")
+    wallet,
+  }) {
+    super({ port, arweave, graphql, type: "SU", wallet })
     this.txmap = {}
     this.pmap = {}
     this.processes = {}
   }
   async init() {
-    await this.genWallet()
     this.server.post("/", async (req, res) => {
       try {
         const tx = await this.arweave.createTransaction({
@@ -78,6 +80,14 @@ class SU extends Base {
         res.json({ error: "bad request" })
       }
     })
+    this.server.get("/", async (req, res) => {
+      res.json({
+        Unit: "Scheduler",
+        Address: await this.arweave.wallets.jwkToAddress(this.wallet),
+        Timestamp: Date.now(),
+        Processes: keys(this.processes).sort(),
+      })
+    })
     this.server.get("/:process", async (req, res) => {
       try {
         let cursor = 0
@@ -114,6 +124,7 @@ class SU extends Base {
       }
     })
     this.start()
+    return this
   }
 }
 

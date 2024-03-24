@@ -32,7 +32,7 @@ function toBech32(arweaveAddress, prefix = "ao") {
 }
 
 class CU extends Base {
-  constructor(
+  constructor({
     port = 1987,
     arweave = {
       host: "localhost",
@@ -40,8 +40,9 @@ class CU extends Base {
       protocol: "http",
     },
     graphql = "http://localhost:1984/graphql",
-  ) {
-    super(port, arweave, graphql, "CU")
+    wallet,
+  }) {
+    super({ wallet, port, arweave, graphql, type: "CU" })
     this.store = {}
     this.ongoing = {}
     this.subscribe = {}
@@ -167,7 +168,6 @@ class CU extends Base {
     }
   }
   async init() {
-    await this.genWallet()
     this.server.get("/state/:process", async (req, res) => {
       try {
         const pid = req.params["process"]
@@ -326,6 +326,7 @@ class CU extends Base {
       }
     })
     this.start()
+    return this
   }
 }
 

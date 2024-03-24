@@ -23,9 +23,11 @@ class CWAO {
       protocol: "http",
     },
     mu_url = "http://localhost:1985",
+    su_url = "http://localhost:1986",
     cu_url = "http://localhost:1987",
   }) {
     this.mu_url = mu_url
+    this.su_url = su_url
     this.cu_url = cu_url
     this.wallet = wallet
     this.arweave = new Arweave(arweave)
@@ -56,8 +58,6 @@ class CWAO {
       { name: "Module-Format", value: "wasm32-unknown-unknown" },
       { name: "Input-Encoding", value: "JSON-V1" },
       { name: "Output-Encoding", value: "JSON-V1" },
-      { name: "Memory-Limit", value: "16-mb" },
-      { name: "Compute-Limit", value: "1000" },
     ],
   ) {
     const tx = await this.arweave.createTransaction({ data: mod })
@@ -70,6 +70,9 @@ class CWAO {
     return await fetch(`${this.cu_url}/result/${mid}?process-id=${pid}`).then(
       r => r.json(),
     )
+  }
+  async getSU() {
+    return await fetch(`${this.su_url}`).then(r => r.json())
   }
   async addScheduler({
     url,
@@ -93,6 +96,7 @@ class CWAO {
     await this.arweave.transactions.post(tx)
     return tx.id
   }
+
   async instantiate({
     module,
     scheduler,

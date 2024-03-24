@@ -3,7 +3,7 @@ const Arweave = require("arweave")
 const cors = require("cors")
 
 class Base {
-  constructor(port, arweave, graphql, type) {
+  constructor({ port, arweave, graphql, type, wallet }) {
     this.graphql = graphql
     this.type = type
     this.port = port
@@ -12,11 +12,7 @@ class Base {
     this.server.use(express.raw())
     this.server.use(express.json())
     this.server.use(cors())
-  }
-  async genWallet() {
-    this.wallet = await this.arweave.wallets.generate()
-    const addr = await this.arweave.wallets.jwkToAddress(this.wallet)
-    await this.arweave.api.get(`mint/${addr}/10000000000000000`)
+    this.wallet = wallet
   }
   start() {
     this.app = this.server.listen(this.port, () =>
