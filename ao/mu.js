@@ -12,7 +12,7 @@ const Base = require("./base")
 const { getSUByProcess, getSU, parse } = require("./utils")
 
 class MU extends Base {
-  constructor(
+  constructor({
     port = 1985,
     arweave = {
       host: "localhost",
@@ -21,8 +21,9 @@ class MU extends Base {
     },
     graphql = "http://localhost:1984/graphql",
     cu_url = "http://localhost:1987",
-  ) {
-    super(port, arweave, graphql, "MU")
+    wallet,
+  }) {
+    super({ port, arweave, graphql, type: "MU", wallet })
     this.cu_url = cu_url
   }
   async send(item) {
@@ -67,7 +68,6 @@ class MU extends Base {
     return id
   }
   async init() {
-    await this.genWallet()
     this.server.post("/", async (req, res) => {
       try {
         const id = await this.send(new DataItem(req.body))
@@ -78,6 +78,7 @@ class MU extends Base {
       }
     })
     this.start()
+    return this
   }
 }
 
