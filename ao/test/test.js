@@ -25,9 +25,8 @@ const sleep = x =>
     setTimeout(() => res(), x)
   })
 
-const getModule = async (
-  module_path = "bare-wasm/target/wasm32-unknown-unknown/release/aotest.wasm",
-) => readFileSync(resolve(__dirname, "../../cosmwasm/", module_path))
+const getModule = async module_path =>
+  readFileSync(resolve(__dirname, "../../cosmwasm/", module_path))
 
 describe("WDB", function () {
   this.timeout(0)
@@ -42,39 +41,7 @@ describe("WDB", function () {
     su.stop()
     cu.stop()
   })
-  /*
-  it("should handle bare wasm", async () => {
-    const _binary = await getModule()
-    const wdb = new WDB({ wallet, arweave })
-    const mod_id = await wdb.addModule(_binary, [
-      { name: "Data-Protocol", value: "wdb-bare" },
-      { name: "Variant", value: "wdb-bare.TN.1" },
-      { name: "Type", value: "Module" },
-      { name: "Module-Format", value: "wasm32-unknown-unknown" },
-      { name: "Input-Encoding", value: "JSON-V1" },
-      { name: "Output-Encoding", value: "JSON-V1" },
-      { name: "Memory-Limit", value: "16-mb" },
-      { name: "Compute-Limit", value: "1000" },
-    ])
-    const sch = await arweave.wallets.jwkToAddress(wallet)
-    const pr = await wdb.addProcess({
-      Module: mod_id,
-      Scheduler: sch,
-      tags: [
-        { name: "Data-Protocol", value: "wdb-bare" },
-        { name: "Variant", value: "wdb-bare.TN.1" },
-        { name: "Type", value: "Process" },
-        { name: "Module", value: mod_id },
-        { name: "Scheduler", value: sch },
-      ],
-    })
-    await wdb.addMessage({ Process: pr.id, num: 1 })
-    await wdb.addMessage({ Process: pr.id, num: 2 })
-    await wdb.addMessage({ Process: pr.id, num: 3 })
-    expect(await wdb.getState(pr.id)).to.eql(6)
-  })
-  */
-  it.only("should handle bare cosmwasm", async () => {
+  it("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet })
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.getMU()).to.eql("ao messenger unit")
@@ -83,6 +50,7 @@ describe("WDB", function () {
     const _binary = await getModule(
       "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
+
     const mod_id = await cwao.deploy(_binary)
     await cwao.addScheduler({ url: "http://localhost:1986" })
     const pr = await cwao.instantiate({
@@ -90,24 +58,26 @@ describe("WDB", function () {
       scheduler: sch,
       input: { num: 4 },
     })
+
     const pr2 = await cwao.instantiate({
       module: mod_id,
       scheduler: sch,
       input: { num: 1 },
     })
     expect((await cwao.getSU()).Processes).to.eql([pr.id, pr2.id].sort())
-    await cwao.execute({ process: pr.id, action: "Add", input: { num: 1 } }) // 1-5
-    await cwao.execute({ process: pr2.id, action: "Add", input: { num: 2 } }) // 2-3
+    await cwao.execute({ process: pr.id, action: "Add", input: { num: 1 } })
+    await cwao.execute({ process: pr2.id, action: "Add", input: { num: 2 } })
+
     await cwao.execute({
       process: pr.id,
       action: "Add2",
       input: { num: 3, addr: pr2.id },
-    }) // 2-6
+    })
     await cwao.execute({
       process: pr.id,
       action: "Add3",
       input: { num: 1, addr: pr2.id },
-    }) // 2-7, 1-6
+    })
     await sleep(500)
     expect(
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
@@ -117,7 +87,7 @@ describe("WDB", function () {
       await cwao.query({ process: pr2.id, action: "Num", input: {} }),
     ).to.eql({ num: 7 })
 
-    await cwao.execute({ process: pr.id, action: "Add5", input: { num: 2 } }) // 1-8
+    await cwao.execute({ process: pr.id, action: "Add5", input: { num: 2 } })
     await sleep(500)
     expect(
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
@@ -127,7 +97,7 @@ describe("WDB", function () {
       process: pr.id,
       action: "Add4",
       input: { num: 1, addr: pr2.id },
-    }) // error
+    })
     await sleep(500)
     expect(
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
@@ -137,7 +107,7 @@ describe("WDB", function () {
       process: pr.id,
       action: "Add4",
       input: { num: 3, addr: pr2.id },
-    }) // with data
+    })
     await sleep(500)
 
     expect(

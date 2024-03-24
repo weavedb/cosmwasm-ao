@@ -18,6 +18,7 @@ function genHash(prev, current) {
     .update(prev + current)
     .digest("hex")
 }
+
 class SU extends Base {
   constructor({
     port = 1986,
