@@ -17,8 +17,8 @@ CosmWasm is [actor model smart contract](https://book.cosmwasm.com/actor-model.h
 To test it out, [ArLocal](https://github.com/textury/arlocal) and 3 [AO units](https://cookbook_ao.g8way.io/concepts/units.html) (MU, CU, SU) need to be running locally.
 
 ```bash
-git clone https://github.com/weavedb/weavechain.git
-cd weavechain/ao
+git clone https://github.com/weavedb/cosmwasm-ao.git
+cd cosmwasm-ao/ao
 yarn
 yarn start
 ```
@@ -49,7 +49,7 @@ cargo build --target wasm32-unknown-unknown --release
 ### Sample Contract
 
 ```bash
-cd weavechain/modules/cosmwasm
+cd cosmwasm-ao/cosmwasm/simple
 cargo build --target wasm32-unknown-unknown --release
 ```
 The binary file to deploy will be at `target/wasm32-unknown-unknown/release/contract.wasm`.

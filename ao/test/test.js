@@ -81,7 +81,7 @@ describe("WDB", function () {
     expect((await cwao.getCU()).address).to.eql(sch)
     expect((await cwao.getSU()).Address).to.eql(sch)
     const _binary = await getModule(
-      "cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
+      "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
     const mod_id = await cwao.deploy(_binary)
     console.log(sch)
