@@ -40,6 +40,7 @@ class SU extends Base {
 
         // [TODO]: process mix bundle (read-only & non-read-only)
         let read_only = false
+        const timestamp = Date.now()
         for (let v of new Bundle(req.body).items) {
           this.txmap[v.id] = tx.id
           const m = parse(v.tags)
@@ -56,7 +57,7 @@ class SU extends Base {
             this.pmap[v.target].push({
               id: v.id,
               owner: address,
-              ts: Date.now(),
+              ts: timestamp,
               item: v,
             })
           } else if (m.type === "Process") {
@@ -74,7 +75,8 @@ class SU extends Base {
           await this.arweave.transactions.sign(tx, this.wallet)
           await this.arweave.transactions.post(tx)
         }
-        res.json({ id: tx.id })
+        res.status(201)
+        res.json({ id: tx.id, timestamp })
       } catch (e) {
         res.status(400)
         res.json({ error: "bad request" })
