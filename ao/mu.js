@@ -68,6 +68,9 @@ class MU extends Base {
     return id
   }
   async init() {
+    this.server.get("/", async (req, res) => {
+      res.send("ao messenger unit")
+    })
     this.server.post("/", async (req, res) => {
       try {
         const id = await this.send(new DataItem(req.body))
