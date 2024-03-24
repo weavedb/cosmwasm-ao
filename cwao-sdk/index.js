@@ -1,13 +1,7 @@
 let Arweave = require("arweave")
+const AOB = require("./aobundles")
 if (Arweave.default) Arweave = Arweave.default
-const {
-  Bundle,
-  DataItem,
-  ArweaveSigner,
-  ArconnectSigner,
-  bundleAndSignData,
-  createData,
-} = require("arbundles")
+const { Bundle, bundleAndSignData } = require("arbundles")
 
 const sleep = x =>
   new Promise(res => {
@@ -25,29 +19,20 @@ class CWAO {
     mu_url = "http://localhost:1985",
     su_url = "http://localhost:1986",
     cu_url = "http://localhost:1987",
+    graphql = "http://localhost:1984/graphql",
   }) {
     this.mu_url = mu_url
     this.su_url = su_url
     this.cu_url = cu_url
+    this.graphql = graphql
     this.wallet = wallet
+    this.network = arweave
     this.arweave = new Arweave(arweave)
-  }
-  async getSigner() {
-    if (this.wallet.sign) {
-      await this.wallet.connect([
-        "ACCESS_ADDRESS",
-        "ACCESS_PUBLIC_KEY",
-        "SIGN_TRANSACTION",
-        "SIGNATURE",
-        "ENCRYPT",
-        "DECRYPT",
-      ])
-      const signer = new ArconnectSigner(this.wallet)
-      await signer.setPublicKey()
-      return signer
-    } else {
-      return new ArweaveSigner(this.wallet)
-    }
+    this.aob = new AOB({
+      wallet: this.wallet,
+      network: this.network,
+      graphql: this.graphql,
+    })
   }
   async deploy(
     mod,
@@ -94,9 +79,8 @@ class CWAO {
   }) {
     tags.push({ name: "Url", value: url })
     tags.push({ name: "Time-To-Live", value: Number(ttl).toString() })
-    const signer = await this.getSigner()
-    const pr = createData("", signer, { tags })
-    const bundle = await bundleAndSignData([pr], signer)
+    const data = await this.aob.data({ tags })
+    const bundle = await bundleAndSignData([data], await this.aob.signer())
     const tx = await this.arweave.createTransaction({ data: bundle.getRaw() })
     tx.addTag("Bundle-Format", "binary")
     tx.addTag("Bundle-Version", "2.0.0")
@@ -121,21 +105,19 @@ class CWAO {
     if (input) {
       tags.push({ name: "Input", value: JSON.stringify(input) })
     }
-    const signer = await this.getSigner()
-    const pr = createData("", signer, {
-      tags,
-    })
+    const data = await this.aob.data({ tags })
     return await fetch(this.mu_url, {
       method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
+        Accept: "application/json",
       },
-      body: pr.getRaw(),
+      redirect: "follow",
+      body: data.getRaw(),
     }).then(r => r.json())
   }
 
   async execute({ process, action, input = {}, query = false }) {
-    const signer = await this.getSigner()
     let tags = [
       { name: "Data-Protocol", value: "cwao" },
       { name: "Variant", value: "cwao.TN.1" },
@@ -144,16 +126,13 @@ class CWAO {
       { name: "Action", value: action },
     ]
     if (query) tags.push({ name: "Read-Only", value: "True" })
-    const pr = createData("", signer, {
-      target: process,
-      tags,
-    })
+    const data = await this.aob.data({ target: process, tags })
     return await fetch(this.mu_url, {
       method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
       },
-      body: pr.getRaw(),
+      body: data.getRaw(),
     }).then(r => r.json())
   }
 
