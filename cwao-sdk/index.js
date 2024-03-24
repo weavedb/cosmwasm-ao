@@ -74,6 +74,11 @@ class CWAO {
   async getSU() {
     return await fetch(`${this.su_url}`).then(r => r.json())
   }
+
+  async getCU() {
+    return await fetch(`${this.cu_url}`).then(r => r.json())
+  }
+
   async addScheduler({
     url,
     ttl = 1000 * 60 * 60,
