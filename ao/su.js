@@ -2,13 +2,11 @@ const crypto = require("crypto")
 const express = require("express")
 const Arweave = require("arweave")
 const { keys } = require("ramda")
-
 const {
   Bundle,
   DataItem,
   ArweaveSigner,
   bundleAndSignData,
-  createData,
 } = require("arbundles")
 
 const { parse } = require("./utils")
@@ -29,6 +27,8 @@ class SU extends Base {
     this.txmap = {}
     this.pmap = {}
     this.processes = {}
+    this.epoch = 0
+    this.nonce = 0
   }
   async init() {
     this.server.post("/", async (req, res) => {
@@ -37,7 +37,6 @@ class SU extends Base {
           data: req.body,
         })
         let ids = []
-
         // [TODO]: process mix bundle (read-only & non-read-only)
         let read_only = false
         const timestamp = Date.now()
