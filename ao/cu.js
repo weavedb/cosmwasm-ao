@@ -168,6 +168,12 @@ class CU extends Base {
     }
   }
   async init() {
+    this.server.get("/", async (req, res) => {
+      res.json({
+        address: await this.arweave.wallets.jwkToAddress(this.wallet),
+        timestamp: Date.now(),
+      })
+    })
     this.server.get("/state/:process", async (req, res) => {
       try {
         const pid = req.params["process"]

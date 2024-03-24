@@ -74,9 +74,10 @@ describe("WDB", function () {
     expect(await wdb.getState(pr.id)).to.eql(6)
   })
   */
-  it.only("should handle bare cosmwasm", async () => {
+  it("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet })
     const sch = await arweave.wallets.jwkToAddress(wallet)
+    expect((await cwao.getCU()).address).to.eql(sch)
     expect((await cwao.getSU()).Address).to.eql(sch)
     const _binary = await getModule(
       "cosmwasm/target/wasm32-unknown-unknown/release/contract.wasm",
