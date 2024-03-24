@@ -58,7 +58,9 @@ class CWAO {
       r => r.json(),
     )
   }
-
+  async timestamp() {
+    return await fetch(`${this.su_url}/timestamp`).then(r => r.json())
+  }
   async getSU() {
     return await fetch(`${this.su_url}`).then(r => r.json())
   }
