@@ -1,11 +1,3 @@
-const { bech32 } = require("bech32")
-const base64url = require("base64url")
-const {
-  BasicBackendApi,
-  BasicKVIterStorage,
-  BasicQuerier,
-  VMInstance,
-} = require("@terran-one/cosmwasm-vm-js")
 const express = require("express")
 const Arweave = require("arweave")
 const {
@@ -17,13 +9,7 @@ const {
 } = require("arbundles")
 const { getSUByProcess, parse } = require("./utils")
 const Base = require("./base")
-
-function toBech32(arweaveAddress, prefix = "ao") {
-  const decodedBytes = base64url.toBuffer(arweaveAddress)
-  const words = bech32.toWords(decodedBytes)
-  const bech32Address = bech32.encode(prefix, words)
-  return bech32Address
-}
+const { VM } = require("./cosmwasm")
 
 class CU extends Base {
   constructor({
@@ -44,61 +30,29 @@ class CU extends Base {
     this.vms = {}
     this.last = 0
     this.su = {}
-    this.messages = {}
-    this.height = {}
+    this.msgs = {}
   }
   async getModule(txid, pr_id) {
-    const data = await this.arweave.transactions.getData(txid, { decode: true })
-    const { instance } = await WebAssembly.instantiate(data, {
-      env: {
-        set: num => {
-          this.store[pr_id] = num
-        },
-        get: () => this.store[pr_id],
-      },
-    })
-    return { _binary: data, ...instance.exports }
-  }
-
-  async getModuleCW(txid, pr_id) {
-    const wasmBytecode = await this.arweave.transactions.getData(txid, {
+    const wasm = await this.arweave.transactions.getData(txid, {
       decode: true,
     })
-    const backend = {
-      backend_api: new BasicBackendApi("ao"),
-      storage: new BasicKVIterStorage(),
-      querier: new BasicQuerier(),
-    }
-    const vm = new VMInstance(backend)
-    await vm.build(wasmBytecode)
+    const vm = new VM({ id: "ao", addr: pr_id })
+    await vm.getVM(wasm)
     return vm
   }
   async instantiate(pid) {
     this.su[pid] ??= await getSUByProcess(pid, this.graphql)
     if (typeof this.su[pid] === "undefined") return
-    this.messages[pid] = await fetch(`${this.su[pid]}/processes/${pid}`).then(
-      r => r.json(),
+    this.msgs[pid] = await fetch(`${this.su[pid]}/processes/${pid}`).then(r =>
+      r.json(),
     )
-    const process = parse(this.messages[pid].tags)
-    this.vms[pid] = await this.getModuleCW(process.module, pid)
-    const initial_input = JSON.parse(process.input)
-    this.height[pid] = 1
-    const env = {
-      block: {
-        height: this.height[pid]++,
-        time: Number(Date.now()).toString(),
-        chain_id: "ao",
-      },
-      contract: { address: pid },
-    }
-    const info = {
-      sender: this.messages[pid].owner.address,
-      funds: [],
-    }
+    const process = parse(this.msgs[pid].tags)
+    this.vms[pid] = await this.getModule(process.module, pid)
+    const input = JSON.parse(process.input)
     this.results[pid] ??= {}
     let result = null
     try {
-      result = this.vms[pid].instantiate(env, info, initial_input)
+      result = this.vms[pid].instantiate(this.msgs[pid].owner.address, input)
       this.results[pid][pid] = result.json
     } catch (e) {
       console.log(e)
@@ -129,31 +83,16 @@ class CU extends Base {
       const id = v.node.message.id
       if (this.results[pid][id]) continue
       try {
-        this.messages[v.node.message.id] = v.node.message
+        this.msgs[v.node.message.id] = v.node.message
         const tags = parse(v.node.message.tags)
         const input = JSON.parse(tags.input)
-        const env = {
-          block: {
-            height: this.height[pid]++,
-            time: Number(Date.now()).toString(),
-            chain_id: "ao",
-          },
-          contract: { address: pid },
-        }
-
-        const info = {
-          sender: toBech32(v.node.owner.address, "ao"),
-          funds: [],
-        }
         let res = null
         if (tags.read_only === "True") {
-          res = this.vms[pid].query(env, { [tags.action]: input })
+          res = this.vms[pid].query(tags.action, input)
         } else if (tags.action === "reply") {
-          res = this.vms[pid].reply(env, input)
+          res = this.vms[pid].reply(input)
         } else {
-          res = this.vms[pid].execute(env, info, {
-            [tags.action]: input,
-          })
+          res = this.vms[pid].execute(v.node.owner.address, tags.action, input)
         }
         this.results[pid][id] = res.json
       } catch (e) {
@@ -177,7 +116,7 @@ class CU extends Base {
           return
         }
         res.setHeader("Content-Type", "application/octet-stream")
-        res.send(Buffer.from(this.vms[pid].exports.memory.buffer))
+        res.send(Buffer.from(this.vms[pid].vm.exports.memory.buffer))
       } catch (e) {
         res.status(400)
         res.json({ error: "bad request" })
@@ -193,12 +132,12 @@ class CU extends Base {
           return
         }
         this.eval(pid, () => {
-          if (typeof this.messages[mid] === "undefined") {
+          if (typeof this.msgs[mid] === "undefined") {
             res.status(400)
             res.json({ error: "bad request" })
             return
           }
-          const tags = parse(this.messages[mid].tags)
+          const tags = parse(this.msgs[mid].tags)
           let qres = this.results[pid][mid]
           let resp = { Messages: [], Spawns: [], Output: [] }
           if (qres.error) {
@@ -234,7 +173,7 @@ class CU extends Base {
             } else {
               for (let v of qres.ok.attributes) {
                 if (v.key === "action" && v.value === "perform_action") {
-                  if (this.messages[mid]) {
+                  if (this.msgs[mid]) {
                     if (
                       tags.reply_on &&
                       (tags.reply_on === "success" ||
