@@ -2,6 +2,7 @@ let Arweave = require("arweave")
 const AOB = require("./aobundles")
 if (Arweave.default) Arweave = Arweave.default
 const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
+const Tag = require("./tag")
 
 const sleep = x =>
   new Promise(res => {
@@ -33,19 +34,11 @@ class CWAO {
       network: this.network,
       graphql: this.graphql,
     })
+    this.tag = new Tag({})
   }
 
-  async deploy(
-    mod,
-    tags = [
-      { name: "Data-Protocol", value: "cwao" },
-      { name: "Variant", value: "cwao.TN.1" },
-      { name: "Type", value: "Module" },
-      { name: "Module-Format", value: "wasm32-unknown-unknown" },
-      { name: "Input-Encoding", value: "JSON-V1" },
-      { name: "Output-Encoding", value: "JSON-V1" },
-    ],
-  ) {
+  async deploy(mod, tags) {
+    tags ??= this.tag.module({})
     const tx = await this.arweave.createTransaction({ data: mod })
     for (let v of tags) tx.addTag(v.name, v.value)
     await this.arweave.transactions.sign(tx, this.wallet)
@@ -78,33 +71,14 @@ class CWAO {
     return await fetch(`${this.mu_url}`).then(r => r.text())
   }
 
-  async addScheduler({
-    url,
-    ttl = 1000 * 60 * 60,
-    tags = [
-      { name: "Data-Protocol", value: "cwao" },
-      { name: "Variant", value: "cwao.TN.1" },
-      { name: "Type", value: "Scheduler-Location" },
-    ],
-  }) {
-    tags.push({ name: "Url", value: url })
-    tags.push({ name: "Time-To-Live", value: Number(ttl).toString() })
+  async addScheduler({ url, ttl, tags }) {
+    tags ??= this.tag.scheduler({ url, ttl })
     const { tx } = await this.aob.send({ tags })
     return tx.id
   }
 
-  async instantiate({
-    module,
-    scheduler,
-    input,
-    tags = [
-      { name: "Data-Protocol", value: "cwao" },
-      { name: "Variant", value: "cwao.TN.1" },
-      { name: "Type", value: "Process" },
-      { name: "Module", value: module },
-      { name: "Scheduler", value: scheduler },
-    ],
-  }) {
+  async instantiate({ module, scheduler, input, tags }) {
+    tags ??= this.tag.process({ module, scheduler })
     if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
     const data = await this.aob.data({ tags })
     return await fetch(this.mu_url, {
@@ -119,21 +93,16 @@ class CWAO {
   }
 
   async execute({ process, action, input = {}, query = false }) {
-    let tags = [
-      { name: "Data-Protocol", value: "cwao" },
-      { name: "Variant", value: "cwao.TN.1" },
-      { name: "Type", value: "Message" },
-      { name: "Input", value: JSON.stringify(input) },
-      { name: "Action", value: action },
-    ]
     let signer
+    let read_only = false
     if (query) {
-      tags.push({ name: "Read-Only", value: "True" })
+      read_only = true
       if (!this.query_wallet) {
         this.query_wallet = await this.arweave.wallets.generate()
       }
       signer = new ArweaveSigner(this.query_wallet)
     }
+    let tags = this.tag.message({ input, action, read_only })
     const data = await this.aob.data({ target: process, tags }, "", signer)
     return await fetch(this.mu_url, {
       method: "POST",

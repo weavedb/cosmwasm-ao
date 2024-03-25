@@ -16,8 +16,10 @@ class MU extends Base {
     graphql = "http://localhost:1984/graphql",
     cu_url = "http://localhost:1987",
     wallet,
+    protocol,
+    variant,
   }) {
-    super({ port, arweave, graphql, type: "MU", wallet })
+    super({ port, arweave, graphql, type: "MU", wallet, protocol, variant })
     this.cu_url = cu_url
     this.init()
   }
