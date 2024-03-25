@@ -1,4 +1,4 @@
-const CWAO = require("cwao")
+const { CWAO } = require("cwao")
 const { ChakraProvider, useToast } = require("@chakra-ui/react")
 const lf = require("localforage")
 const { Input, Flex, Box } = require("@chakra-ui/react")
