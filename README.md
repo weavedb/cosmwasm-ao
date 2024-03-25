@@ -31,7 +31,7 @@ yarn start
 ## CW20 Token Demo
 
 ```bash
-cd dapps/cw20
+cd cosmwasm-ao/dapps/cw20
 yarn
 yarn dev
 ```
