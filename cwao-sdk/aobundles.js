@@ -5,8 +5,9 @@ const {
   createData,
   bundleAndSignData,
 } = require("arbundles")
-const Arweave = require("arweave")
+let Arweave = require("arweave")
 if (Arweave.default) Arweave = Arweave.default
+
 module.exports = class AOBundles {
   constructor({
     wallet,
@@ -40,8 +41,9 @@ module.exports = class AOBundles {
     }
   }
   async send(tags, _data = "", signer) {
-    const data = await this.data(tags, _data, signer)
-    const bundle = await this.bundle([data], signer)
+    const _signer = signer || (await this.signer())
+    const data = await this.data(tags, _data, _signer)
+    const bundle = await this.bundle([data], _signer)
     const res = await this.post(bundle)
     return { data, bundle, ...res }
   }
@@ -65,9 +67,20 @@ module.exports = class AOBundles {
       bundle.getRaw(),
     )
   }
+
   async tx(bundle) {
-    const tx = await bundle.toTransaction({}, this.arweave, this.wallet)
-    await this.arweave.transactions.sign(tx, this.wallet)
+    let tx = null
+    if (this.wallet.sign) {
+      tx = await this.arweave.createTransaction({
+        data: bundle.binary,
+      })
+      tx.addTag("Bundle-Format", "binary")
+      tx.addTag("Bundle-Version", "2.0.0")
+      await this.arweave.transactions.sign(tx)
+    } else {
+      tx = await bundle.toTransaction({}, this.arweave, this.wallet)
+      await this.arweave.transactions.sign(tx, this.wallet)
+    }
     return tx
   }
   async post(bundle) {
