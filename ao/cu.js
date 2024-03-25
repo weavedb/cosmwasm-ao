@@ -14,8 +14,10 @@ class CU extends Base {
     },
     graphql = "http://localhost:1984/graphql",
     wallet,
+    protocol,
+    variant,
   }) {
-    super({ wallet, port, arweave, graphql, type: "CU" })
+    super({ wallet, port, arweave, graphql, type: "CU", protocol, variant })
     this.ongoing = {}
     this.subscribe = {}
     this.results = {}
@@ -157,24 +159,14 @@ class CU extends Base {
             (tags.reply_on === "error" || tags.reply_on === "always") &&
             qres.error
           ) {
-            let _tags = [
-              { name: "Data-Protocol", value: "wdb" },
-              { name: "Variant", value: "wdb.TN.1" },
-              { name: "Type", value: "Message" },
-              {
-                name: "Input",
-                value: JSON.stringify({
-                  id: Number(tags.reply_id),
-                  result: { error: qres.error },
-                }),
-              },
-              { name: "Action", value: "reply" },
+            const input = {
+              id: Number(tags.reply_id),
+              result: { error: qres.error },
+            }
+            let _tags = this.tag.message({ action: "reply", input }, [
               { name: "From-Process", value: pid },
-            ]
-            resp.Messages.push({
-              Target: tags.from_process,
-              Tags: _tags,
-            })
+            ])
+            resp.Messages.push({ Target: tags.from_process, Tags: _tags })
           }
           resp.Error = qres.error
           res.json(resp)
@@ -191,20 +183,13 @@ class CU extends Base {
                       tags.reply_on === "always") &&
                     qres.ok
                   ) {
-                    let _tags = [
-                      { name: "Data-Protocol", value: "wdb" },
-                      { name: "Variant", value: "wdb.TN.1" },
-                      { name: "Type", value: "Message" },
-                      {
-                        name: "Input",
-                        value: JSON.stringify({
-                          id: Number(tags.reply_id),
-                          result: { ok: { events: [], data: qres.ok.data } },
-                        }),
-                      },
-                      { name: "Action", value: "reply" },
+                    const input = {
+                      id: Number(tags.reply_id),
+                      result: { ok: { events: [], data: qres.ok.data } },
+                    }
+                    let _tags = this.tag.message({ action: "reply", input }, [
                       { name: "From-Process", value: pid },
-                    ]
+                    ])
                     resp.Messages.push({
                       Target: tags.from_process,
                       Tags: _tags,
@@ -218,21 +203,18 @@ class CU extends Base {
               const { id, reply_on } = v
               const _msg = JSON.parse(atob(msg))
               for (let k in _msg) {
-                let tags = [
-                  { name: "Data-Protocol", value: "wdb" },
-                  { name: "Variant", value: "wdb.TN.1" },
-                  { name: "Type", value: "Message" },
-                  { name: "Input", value: JSON.stringify(_msg[k]) },
-                  { name: "Action", value: k },
-                  { name: "From-Process", value: pid },
-                ]
+                let custom = [{ name: "From-Process", value: pid }]
                 if (reply_on) {
-                  tags.push({ name: "Reply_On", value: reply_on })
-                  tags.push({
+                  custom.push({ name: "Reply_On", value: reply_on })
+                  custom.push({
                     name: "Reply_Id",
                     value: Number(id).toString(),
                   })
                 }
+                let tags = this.tag.message(
+                  { input: _msg[k], action: k },
+                  custom,
+                )
                 resp.Messages.push({
                   Target: contract_addr,
                   Tags: tags,

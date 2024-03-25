@@ -2,9 +2,10 @@ const express = require("express")
 const Arweave = require("arweave")
 const cors = require("cors")
 const AOB = require("../cwao-sdk/aobundles")
+const Tag = require("../cwao-sdk/tag")
 
 class Base {
-  constructor({ port, arweave, graphql, type, wallet }) {
+  constructor({ port, arweave, graphql, type, wallet, protocol, variant }) {
     this.graphql = graphql
     this.type = type
     this.port = port
@@ -15,6 +16,7 @@ class Base {
     this.server.use(express.json())
     this.server.use(cors())
     this.wallet = wallet
+    this.tag = new Tag({ protocol, variant })
     this.aob = new AOB({
       wallet: this.wallet,
       network: this.network,

@@ -21,8 +21,10 @@ class SU extends Base {
     },
     graphql = "http://localhost:1984/graphql",
     wallet,
+    protocol,
+    variant,
   }) {
-    super({ port, arweave, graphql, type: "SU", wallet })
+    super({ port, arweave, graphql, type: "SU", wallet, protocol, variant })
     this.pmap = {}
     this.processes = {}
     this.epoch = 0
@@ -75,22 +77,14 @@ class SU extends Base {
       if (type === "message") {
         const current = bundle.items[0].id
         this.hash = genHash(this.hash, current)
-        const tags = [
-          { name: "Data-Protocol", value: "cwao" },
-          { name: "Variant", value: "cwao.TN.1" },
-          { name: "Type", value: "Assignment" },
-          { name: "Process", value: Number(m.process).toString() },
-          { name: "Epoch", value: Number(++this.epoch).toString() },
-          { name: "Nonce", value: Number(++this.nonce).toString() },
-          { name: "Hash-Chain", value: this.hash },
-          { name: "Timestamp", value: Number(timestamp).toString() },
-          {
-            name: "Block-Height",
-            value: Number(
-              (await this.arweave.blocks.getCurrent()).height,
-            ).toString(),
-          },
-        ]
+        const tags = this.tag.assignment({
+          process: m.process,
+          epoch: ++this.epoch,
+          nonce: ++this.nonce,
+          hash: this.hash,
+          timestamp,
+          height: (await this.arweave.blocks.getCurrent()).height,
+        })
         const { data } = await this.aob.send(
           tags,
           this.aob.nest(bundle).rawData,
