@@ -1,7 +1,7 @@
 let Arweave = require("arweave")
 const AOB = require("./aobundles")
 if (Arweave.default) Arweave = Arweave.default
-const { DataItem, bundleAndSignData } = require("arbundles")
+const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
 
 const sleep = x =>
   new Promise(res => {
@@ -126,8 +126,15 @@ class CWAO {
       { name: "Input", value: JSON.stringify(input) },
       { name: "Action", value: action },
     ]
-    if (query) tags.push({ name: "Read-Only", value: "True" })
-    const data = await this.aob.data({ target: process, tags })
+    let signer
+    if (query) {
+      tags.push({ name: "Read-Only", value: "True" })
+      if (!this.query_wallet) {
+        this.query_wallet = await this.arweave.wallets.generate()
+      }
+      signer = new ArweaveSigner(this.query_wallet)
+    }
+    const data = await this.aob.data({ target: process, tags }, "", signer)
     return await fetch(this.mu_url, {
       method: "POST",
       headers: {
