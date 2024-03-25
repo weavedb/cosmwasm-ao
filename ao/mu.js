@@ -1,13 +1,7 @@
 const express = require("express")
 const Arweave = require("arweave")
 const { groupBy, map, prop } = require("ramda")
-const {
-  Bundle,
-  DataItem,
-  ArweaveSigner,
-  bundleAndSignData,
-  createData,
-} = require("arbundles")
+const { DataItem } = require("arbundles")
 const Base = require("./base")
 const { getSUByProcess, getSU, parse } = require("./utils")
 
@@ -25,6 +19,7 @@ class MU extends Base {
   }) {
     super({ port, arweave, graphql, type: "MU", wallet })
     this.cu_url = cu_url
+    this.init()
   }
   async send(item) {
     const tags = parse(item.tags)
@@ -109,27 +104,28 @@ class MU extends Base {
     }
     return { item, valid }
   }
-  async init() {
-    this.server.get("/", async (req, res) => {
-      res.send("ao messenger unit")
-    })
-    this.server.post("/", async (req, res) => {
-      const { valid, item } = await this.verify(req.body)
-      if (!valid) {
-        res.status(400)
-        res.json({ error: "bad request" })
-        return
-      }
-      try {
-        const id = await this.send(item)
-        res.json({ id })
-      } catch (e) {
-        res.status(400)
-        res.json({ error: "bad request" })
-      }
-    })
+  async get_root(req, res) {
+    res.send("ao messenger unit")
+  }
+  async post_root(req, res) {
+    const { valid, item } = await this.verify(req.body)
+    if (!valid) {
+      res.status(400)
+      res.json({ error: "bad request" })
+      return
+    }
+    try {
+      const id = await this.send(item)
+      res.json({ id })
+    } catch (e) {
+      res.status(400)
+      res.json({ error: "bad request" })
+    }
+  }
+  init() {
+    const routes = { get: { "/": "root" }, post: { "/": "root" } }
+    this.router(routes)
     this.start()
-    return this
   }
 }
 

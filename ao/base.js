@@ -21,6 +21,15 @@ class Base {
       graphql: this.graphql,
     })
   }
+  router(router) {
+    for (const method in router) {
+      for (const pth in router[method]) {
+        this.server[method](pth, (req, res) =>
+          this[`${method}_${router[method][pth]}`](req, res),
+        )
+      }
+    }
+  }
   start() {
     this.app = this.server.listen(this.port, () =>
       console.log(`${this.type} on port ${this.port}`),

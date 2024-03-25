@@ -19,9 +19,9 @@ const start = async (
   const addr = await arweave.wallets.jwkToAddress(wallet)
   await arweave.api.get(`mint/${addr}/10000000000000000`)
   console.log(`[Wallet] ${addr}`)
-  const mu = await new MU({ wallet }).init()
-  const su = await new SU({ wallet }).init()
-  const cu = await new CU({ wallet }).init()
+  const mu = new MU({ wallet })
+  const su = new SU({ wallet })
+  const cu = new CU({ wallet })
   return { mu, su, cu, arweave, wallet, arLocal }
 }
 
