@@ -35,7 +35,7 @@ describe("WDB", function () {
     su.stop()
     cu.stop()
   })
-  it("should handle bare cosmwasm", async () => {
+  it.only("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet })
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.getMU()).to.eql("ao messenger unit")
@@ -78,7 +78,6 @@ describe("WDB", function () {
     expect(
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
     ).to.eql({ num: 6 })
-    return
     expect(
       await cwao.query({ process: pr2.id, action: "Num", input: {} }),
     ).to.eql({ num: 7 })
@@ -113,6 +112,8 @@ describe("WDB", function () {
     expect(
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
     ).to.eql({ num: 14 })
+
+    expect((await cwao.state(pr.id)).byteLength).to.eql(1179648)
   })
 
   it("should handle cw20 token", async () => {

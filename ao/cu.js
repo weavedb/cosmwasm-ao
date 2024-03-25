@@ -19,15 +19,9 @@ const { getSUByProcess, parse } = require("./utils")
 const Base = require("./base")
 
 function toBech32(arweaveAddress, prefix = "ao") {
-  // Decode the base64url Arweave address to get the original bytes
   const decodedBytes = base64url.toBuffer(arweaveAddress)
-
-  // Convert the bytes to Bech32 words
   const words = bech32.toWords(decodedBytes)
-
-  // Encode the words with the specified prefix to get the Bech32 address
   const bech32Address = bech32.encode(prefix, words)
-
   return bech32Address
 }
 
@@ -177,40 +171,13 @@ class CU extends Base {
     this.server.get("/state/:process", async (req, res) => {
       try {
         const pid = req.params["process"]
-        if (process.protocol === "wdb-bare") {
-          const url = await getSUByProcess(pid, this.graphql)
-          if (typeof url === "undefined") {
-            res.status(400)
-            res.json({ error: "bad request" })
-            return
-          }
-          const process = parse(
-            (await fetch(`${url}/processes/${pid}`).then(r => r.json())).tags,
-          )
-          const { ext, add } = await this.getModule(process.module, pid)
-          const pmap = (await fetch(`${url}/${pid}`).then(r => r.json())).edges
-          this.store[pid] = 0
-          for (let v of pmap) {
-            const tags = parse(v.node.message.tags)
-            add(tags.num * 1)
-          }
-          res.json({ state: ext() })
-        } else {
-          await this.eval(pid, () => {
-            const env = {
-              block: {
-                height: this.height[pid],
-                time: Number(Date.now()).toString(),
-                chain_id: "ao",
-              },
-              contract: { address: pid },
-            }
-            let num = JSON.parse(
-              atob(this.vms[pid].query(env, { Num: {} }).json.ok),
-            ).num
-            res.json({ state: num })
-          })
+        if (!this.vms[pid]) {
+          res.status(400)
+          res.json({ error: "bad request" })
+          return
         }
+        res.setHeader("Content-Type", "application/octet-stream")
+        res.send(Buffer.from(this.vms[pid].exports.memory.buffer))
       } catch (e) {
         res.status(400)
         res.json({ error: "bad request" })
