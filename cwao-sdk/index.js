@@ -58,6 +58,11 @@ class CWAO {
       r => r.json(),
     )
   }
+  async state(process) {
+    return await fetch(`${this.cu_url}/state/${process}`).then(r =>
+      r.arrayBuffer(),
+    )
+  }
   async timestamp() {
     return await fetch(`${this.su_url}/timestamp`).then(r => r.json())
   }
