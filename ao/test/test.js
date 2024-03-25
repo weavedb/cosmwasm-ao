@@ -1,6 +1,6 @@
 const { expect } = require("chai")
 const WDB = require("../wdb")
-const CWAO = require("../../cwao-sdk")
+const { CWAO } = require("../../cwao-sdk")
 const { start } = require("../test-utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")

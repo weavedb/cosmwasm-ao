@@ -65,7 +65,7 @@ yarn add cwao
 ### Using SDK in Node Script
 
 ```javascript
-const CWAO = require("cwao")
+const { CWAO } = require("cwao")
 
 // wallet = Arweave wallet jwk loaded with enough $AR
 const cwao = new CWAO({ wallet })
@@ -84,8 +84,8 @@ const scheduler_address = await cwao.arweave.wallets.jwkToAddress(wallet)
 
 // instantiate contract
 const process = await cwao.instantiate({
-  Module: module_txid,
-  Scheduler: scheduler_address,
+  module: module_txid,
+  scheduler: scheduler_address,
   input: { num: 1 },
 })
 
@@ -93,6 +93,6 @@ const process = await cwao.instantiate({
 await cwao.execute({ process: process.id, action: "Add", input: { num: 2 } })
 
 // query contract
-const result = await cwao.query({process:process.id, action: "Num", input: {}})
+const result = await cwao.query({process: process.id, action: "Num", input: {}})
 
 ```
