@@ -6,6 +6,7 @@ const { useState, useEffect } = require("react")
 const bech32 = require("bech32")
 const base64url = require("base64url")
 const { equals, assoc, map, append } = require("ramda")
+
 function toBech32(arweaveAddress, prefix = "ao") {
   const decodedBytes = base64url.toBuffer(arweaveAddress)
   const words = bech32.toWords(decodedBytes)
@@ -47,6 +48,7 @@ export default function Home() {
       )?.balance ?? "0"
     setBalances(assoc(id, _balance, balances))
   }
+
   useEffect(() => {
     ;(async () => {
       const _module = await lf.getItem("module")
@@ -347,7 +349,12 @@ export default function Home() {
       Coming Soon...
     </Flex>
   )
-  const ok_mint = !/^\s*$/.test(tokenName) & !/^\s*$/.test(tokenSymbol)
+  const valid_holder =
+    tokenInitialHolder.length === 43 &&
+    /^[A-Za-z0-9_-]+$/.test(tokenInitialHolder)
+
+  const ok_mint =
+    !/^\s*$/.test(tokenName) & !/^\s*$/.test(tokenSymbol) & valid_holder
   const Mint = (
     <>
       <Flex>
@@ -396,11 +403,19 @@ export default function Home() {
       </Flex>
       <Flex mt={2}>
         <Box flex={1} px={2}>
-          <Box mb={1}>Initial Holder</Box>
+          <Box mb={1}>
+            Initial Holder
+            {!valid_holder ? (
+              <Box ml={2} as="span" color="crimson" fontSize="12px">
+                Invalid Address
+              </Box>
+            ) : null}
+          </Box>
           <Input
             value={tokenInitialHolder}
             onChange={e => setTokenInitialHolder(e.target.value)}
             bg="white"
+            sx={{ border: !valid_holder ? "2px solid crimson" : "" }}
           />
         </Box>
         <Box flex={1} px={2}>
@@ -427,7 +442,7 @@ export default function Home() {
         py={2}
         sx={{
           borderRadius: "3px",
-          cursor: "pointer",
+          cursor: ok_mint ? "pointer" : "default",
           ":hover": { opacity: 0.75 },
         }}
         onClick={async () => {
@@ -498,7 +513,9 @@ export default function Home() {
       </Flex>
     </>
   )
-  const ok_send = +sendAmount > 0 && !/^\s*$/.test(sendTo)
+  const valid_to = sendTo.length === 43 && /^[A-Za-z0-9_-]+$/.test(sendTo)
+
+  const ok_send = +sendAmount > 0 && !/^\s*$/.test(sendTo) && valid_to
   const Wallet = (
     <>
       {send ? null : (
@@ -550,11 +567,19 @@ export default function Home() {
               <Box px={6} pb={6}>
                 <Flex>
                   <Box flex={1} px={2}>
-                    <Box mb={1}>To</Box>
+                    <Box mb={1}>
+                      To{" "}
+                      {!valid_to ? (
+                        <Box ml={2} as="span" color="crimson" fontSize="12px">
+                          Invalid Address
+                        </Box>
+                      ) : null}
+                    </Box>
                     <Input
                       value={sendTo}
                       onChange={e => setSendTo(e.target.value)}
                       bg="white"
+                      sx={{ border: !valid_to ? "2px solid crimson" : "" }}
                     />
                   </Box>
                 </Flex>
