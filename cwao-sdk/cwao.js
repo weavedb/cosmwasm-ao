@@ -14,26 +14,20 @@ class CWAO {
       port: 1984,
       protocol: "http",
     },
-    mu_url = "http://localhost:1985",
-    su_url = "http://localhost:1986",
-    cu_url = "http://localhost:1987",
-    graphql = "http://localhost:1984/graphql",
+    mu = "http://localhost:1985",
+    su = "http://localhost:1986",
+    cu = "http://localhost:1987",
   }) {
-    this.mu_url = mu_url
-    this.su_url = su_url
-    this.cu_url = cu_url
-    this.graphql = graphql
     this.wallet = wallet
     this.network = arweave
     this.arweave = new Arweave(arweave)
     this.data = new Data({
       wallet: this.wallet,
       network: this.network,
-      graphql: this.graphql,
     })
-    this.cu = new CU({ url: this.cu_url })
-    this.mu = new MU({ url: this.mu_url })
-    this.su = new SU({ url: this.su_url })
+    this.cu = new CU({ url: cu })
+    this.mu = new MU({ url: mu })
+    this.su = new SU({ url: su })
   }
 
   async deploy(mod, tags) {
