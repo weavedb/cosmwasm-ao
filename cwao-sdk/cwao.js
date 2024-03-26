@@ -100,7 +100,7 @@ class CWAO {
       if (!this.query_wallet) {
         this.query_wallet = await this.arweave.wallets.generate()
       }
-      signer = new ArweaveSigner(this.query_wallet)
+      //signer = new ArweaveSigner(this.query_wallet)
     }
     let tags = this.tag.message({ input, action, read_only })
     const data = await this.aob.data({ target: process, tags }, "", signer)

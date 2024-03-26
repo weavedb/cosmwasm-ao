@@ -31,12 +31,13 @@ class MU extends Base {
     } else if (tags.type === "Process") {
       url = await getSU(tags.scheduler, this.graphql)
     }
+    const bundle = await this.aob.bundle([item])
     await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
       },
-      body: (await this.aob.bundle([item])).getRaw(),
+      body: bundle.getRaw(),
     }).then(r => r.json())
     if (tags.type === "Message") {
       fetch(`${this.cu_url}/result/${item.id}?process-id=${item.target}`)
@@ -61,50 +62,13 @@ class MU extends Base {
   async verify(binary) {
     let item = null
     let valid = await DataItem.verify(binary)
+    let type = null
     if (valid) {
       item = new DataItem(binary)
-      const tags = groupBy(prop("name"))(item.tags)
-      const type = this.aob.getType(tags)
-      const one = [1, 1]
-      const lte_one = [0, 1]
-      const zero_n = [0]
-      switch (type) {
-        case "Message":
-          valid = this.aob.verifyTags(tags, {
-            "Data-Protocol": [one],
-            Variant: [one],
-            Type: [one],
-            Load: [lte_one],
-            "Read-Only": [lte_one],
-            "From-Process": [lte_one],
-            "From-Module": [lte_one],
-            "Pushed-For": [lte_one],
-            Cast: [lte_one],
-          })
-          break
-        case "Process":
-          valid = this.aob.verifyTags(
-            tags,
-            {
-              "Data-Protocol": [one],
-              Variant: [one],
-              Type: [one],
-              Module: [one],
-              Scheduler: [one],
-              "Cron-Interval": [zero_n],
-              "Memory-Limit": [lte_one],
-              "Compute-Limit": [lte_one],
-              "Pushed-For": [lte_one],
-              Cast: [lte_one],
-            },
-            (v, k) => !/^Cron-Tag-.+$/.test(k) || v.length <= 1,
-          )
-          break
-        default:
-          valid = false
-      }
+      await item.setSignature(item.rawSignature)
+      ;({ valid, type } = this.tag.validate(item))
     }
-    return { item, valid }
+    return { item, valid, type }
   }
   async get_root(req, res) {
     res.send("ao messenger unit")

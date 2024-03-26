@@ -1,4 +1,4 @@
-const { concat } = require("ramda")
+const { groupBy, prop, concat } = require("ramda")
 
 class Tag {
   constructor({ protocol = "cwao", variant = "cwao.TN.1" }) {
@@ -70,6 +70,78 @@ class Tag {
       },
     ]
     return concat(tags, custom)
+  }
+  getType(tags) {
+    return tags.Type?.[0]?.value
+  }
+  isValid(tags, cond, func) {
+    let valid = true
+    let type = this.getType(tags)
+    for (const k in cond) {
+      const t = tags[k]
+      const c = cond[k]
+      const len = t ? t.length : 0
+      if (len < c[0][0] || (c[0][1] && len > c[0][1])) {
+        valid = false
+        break
+      }
+      if (typeof c[1] === "function") {
+        for (const v of t) {
+          if (!c[1](v.value)) {
+            valid = false
+            break
+          }
+        }
+      }
+    }
+    if (typeof func === "function") {
+      for (const k in tags) {
+        if (!func(tags[k], k)) {
+          valid = false
+          break
+        }
+      }
+    }
+    return valid
+  }
+  validate(item) {
+    const one = [1, 1]
+    const lte_one = [0, 1]
+    const zero_n = [0]
+    const cond = {
+      Message: [
+        {
+          "Data-Protocol": [one],
+          Variant: [one],
+          Type: [one],
+          Load: [lte_one],
+          "Read-Only": [lte_one],
+          "From-Process": [lte_one],
+          "From-Module": [lte_one],
+          "Pushed-For": [lte_one],
+          Cast: [lte_one],
+        },
+      ],
+      Process: [
+        {
+          "Data-Protocol": [one],
+          Variant: [one],
+          Type: [one],
+          Module: [one],
+          Scheduler: [one],
+          "Cron-Interval": [zero_n],
+          "Memory-Limit": [lte_one],
+          "Compute-Limit": [lte_one],
+          "Pushed-For": [lte_one],
+          Cast: [lte_one],
+        },
+        (v, k) => !/^Cron-Tag-.+$/.test(k) || v.length <= 1,
+      ],
+    }
+    const tags = groupBy(prop("name"))(item.tags)
+    const type = this.getType(tags)
+    const valid = !cond[type] ? false : this.isValid(tags, ...cond[type])
+    return { type, valid }
   }
 }
 
