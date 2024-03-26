@@ -19,6 +19,13 @@ class MU extends Base {
     this.cu_url = cu_url
     this.init()
   }
+
+  init() {
+    const routes = { get: { "/": "root" }, post: { "/": "root" } }
+    this.router(routes)
+    this.start()
+  }
+
   async send(item, res) {
     let error = null
     const tags = this.aob.tag.parse(item.tags)
@@ -83,11 +90,6 @@ class MU extends Base {
         await this.send(_item, res)
       } catch (e) {}
     }
-  }
-  init() {
-    const routes = { get: { "/": "root" }, post: { "/": "root" } }
-    this.router(routes)
-    this.start()
   }
 }
 

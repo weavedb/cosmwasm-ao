@@ -1,9 +1,10 @@
 let Arweave = require("arweave")
 if (Arweave.default) Arweave = Arweave.default
-
 const AOB = require("./aobundles")
 const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
 const CU = require("./cu")
+const MU = require("./mu")
+
 class CWAO {
   constructor({
     wallet,
@@ -30,6 +31,7 @@ class CWAO {
       graphql: this.graphql,
     })
     this.cu = new CU({ url: this.cu_url })
+    this.mu = new MU({ url: this.mu_url })
   }
 
   async deploy(mod, tags) {
@@ -49,10 +51,6 @@ class CWAO {
     return await fetch(`${this.su_url}`).then(r => r.json())
   }
 
-  async getMU() {
-    return await fetch(`${this.mu_url}`).then(r => r.text())
-  }
-
   async addScheduler({ url, ttl, tags }) {
     tags ??= this.aob.tag.scheduler({ url, ttl })
     const { tx } = await this.aob.send({ tags })
@@ -62,16 +60,8 @@ class CWAO {
   async instantiate({ module, scheduler, input, tags }) {
     tags ??= this.aob.tag.process({ module, scheduler })
     if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
-    const data = await this.aob.data({ tags })
-    return await fetch(this.mu_url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-        Accept: "application/json",
-      },
-      redirect: "follow",
-      body: data.getRaw(),
-    }).then(r => r.json())
+    const item = await this.aob.data({ tags })
+    return await this.mu.post(item)
   }
 
   async execute({ process, action, input = {}, query = false }) {
@@ -85,16 +75,8 @@ class CWAO {
       signer = new ArweaveSigner(this.query_wallet)
     }
     let tags = this.aob.tag.message({ input, action, read_only })
-    const data = await this.aob.data({ target: process, tags }, "", signer)
-    return await fetch(this.mu_url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-        Accept: "application/json",
-      },
-      redirect: "follow",
-      body: data.getRaw(),
-    }).then(r => r.json())
+    const item = await this.aob.data({ target: process, tags }, "", signer)
+    return await this.mu.post(item)
   }
 
   async query({ process, action, input = {} }) {

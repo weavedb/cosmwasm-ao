@@ -25,6 +25,7 @@ const getModule = async module_path =>
 describe("WDB", function () {
   this.timeout(0)
   let mu, su, cu, wallet, arweave, arLocal
+
   before(async () => {
     ;({ mu, su, cu, wallet, arweave, arLocal } = await start())
   })
@@ -35,10 +36,11 @@ describe("WDB", function () {
     su.stop()
     cu.stop()
   })
+
   it("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet })
     const sch = await arweave.wallets.jwkToAddress(wallet)
-    expect(await cwao.getMU()).to.eql("ao messenger unit")
+    expect(await cwao.mu.get()).to.eql("ao messenger unit")
     expect((await cwao.cu.get()).address).to.eql(sch)
     expect((await cwao.getSU()).Address).to.eql(sch)
     expect((await cwao.timestamp()).block_height).to.eql(0)
