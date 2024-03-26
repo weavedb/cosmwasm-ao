@@ -2001,10 +2001,10 @@ cssfilter@0.0.10:
   resolved "https://registry.yarnpkg.com/cssfilter/-/cssfilter-0.0.10.tgz#c6d2672632a2e5c83e013e6864a42ce8defd20ae"
   integrity sha512-FAaLDaplstoRsDR8XGYH51znUN0UY7nMc6Z9/fvE8EXGwvJE9hu7W2vHwx1+bd6gCYnln9nLbzxFTrcO9YQDZw==
 
-cwao@^0.2.15:
-  version "0.2.15"
-  resolved "https://registry.yarnpkg.com/cwao/-/cwao-0.2.15.tgz#325f7e8a4f69dce893e6ba9ac6713738d8f5907b"
-  integrity sha512-BP5lAktTyMkqYpvCX45EJfHKnyl/z+Gb2zlFJwnV7uT2/Wcf4BcQjdqrqmiVjZg20mqnkVhy5REcMlV9J9YQ9A==
+cwao@^0.2.16:
+  version "0.2.16"
+  resolved "https://registry.yarnpkg.com/cwao/-/cwao-0.2.16.tgz#685568a97594a347583eb7721dcdee1458e75aa8"
+  integrity sha512-bp1asiQIlCgLmAv6hzqSYAA2WP5ga49ACRhkB8/Bhdh0rVCzAuAmAZzeWQkzeGR75Qiym0MPym9EsjUsmclBKA==
   dependencies:
     arbundles "^0.11.0"
     arweave "^1.15.0"

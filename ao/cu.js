@@ -94,7 +94,6 @@ class CU extends Base {
       const id = v.node.message.id
       if (this.results[pid][id]) continue
       try {
-        this.msgs[v.node.message.id] = v.node.message
         const tags = parse(v.node.message.tags)
         const input = JSON.parse(tags.input)
         let res = null
@@ -105,6 +104,7 @@ class CU extends Base {
         } else {
           res = this.vms[pid].execute(v.node.owner.address, tags.action, input)
         }
+        this.msgs[v.node.message.id] = v.node.message
         this.results[pid][id] = res.json
       } catch (e) {
         console.log(e)
@@ -122,109 +122,107 @@ class CU extends Base {
   async get_state(req, res) {
     try {
       const pid = req.params["process"]
-      if (!this.vms[pid]) {
-        res.status(400)
-        res.json({ error: "bad request" })
-        return
-      }
+      if (!this.vms[pid]) return this.bad_request(res)
       res.setHeader("Content-Type", "application/octet-stream")
       res.send(Buffer.from(this.vms[pid].vm.exports.memory.buffer))
     } catch (e) {
-      res.status(400)
-      res.json({ error: "bad request" })
+      return this.bad_request(res)
     }
   }
-
+  parseResult(pid, mid) {
+    let resp = { Messages: [], Spawns: [], Output: [] }
+    const tags = parse(this.msgs[mid].tags)
+    let qres = this.results[pid][mid]
+    if (qres.error) {
+      if (
+        tags.reply_on &&
+        (tags.reply_on === "error" || tags.reply_on === "always") &&
+        qres.error
+      ) {
+        const input = {
+          id: Number(tags.reply_id),
+          result: { error: qres.error },
+        }
+        let _tags = this.aob.tag.message({ action: "reply", input }, [
+          { name: "From-Process", value: pid },
+        ])
+        resp.Messages.push({ Target: tags.from_process, Tags: _tags })
+      }
+      resp.Error = qres.error
+    } else {
+      if (tags.read_only === "True") {
+        resp.Output = JSON.parse(atob(qres.ok))
+      } else {
+        for (let v of qres.ok.attributes) {
+          if (v.key === "action" && v.value === "perform_action") {
+            if (this.msgs[mid]) {
+              if (
+                tags.reply_on &&
+                (tags.reply_on === "success" || tags.reply_on === "always") &&
+                qres.ok
+              ) {
+                const input = {
+                  id: Number(tags.reply_id),
+                  result: { ok: { events: [], data: qres.ok.data } },
+                }
+                let _tags = this.aob.tag.message({ action: "reply", input }, [
+                  { name: "From-Process", value: pid },
+                ])
+                resp.Messages.push({ Target: tags.from_process, Tags: _tags })
+              }
+            }
+          }
+        }
+        for (let v of qres.ok.messages) {
+          const { contract_addr, funds, msg } = v.msg.wasm.execute
+          const { id, reply_on } = v
+          const _msg = JSON.parse(atob(msg))
+          for (let k in _msg) {
+            let custom = [{ name: "From-Process", value: pid }]
+            if (reply_on) {
+              custom.push({ name: "Reply_On", value: reply_on })
+              custom.push({
+                name: "Reply_Id",
+                value: Number(id).toString(),
+              })
+            }
+            let tags = this.aob.tag.message(
+              { input: _msg[k], action: k },
+              custom,
+            )
+            resp.Messages.push({
+              Target: contract_addr,
+              Tags: tags,
+            })
+          }
+        }
+      }
+    }
+    return resp
+  }
+  getResult(pid, mid, res, start) {
+    this.eval(pid, () => {
+      if (!this.msgs[mid]) {
+        if (start - Date.now() < 3000) {
+          setTimeout(() => this.getResult(pid, mid, res, start), 500)
+        } else {
+          return this.bad_request(res)
+        }
+        return this.bad_request(res)
+      } else {
+        res.json(this.parseResult(pid, mid))
+      }
+    })
+  }
   async get_result(req, res) {
     try {
       const pid = req.query["process-id"]
       const mid = req.params.message
-      if (typeof mid === "undefined") {
-        res.status(400)
-        res.json({ error: "bad request" })
-        return
-      }
-      this.eval(pid, () => {
-        if (typeof this.msgs[mid] === "undefined") return this.bad_request(res)
-        const tags = parse(this.msgs[mid].tags)
-        let qres = this.results[pid][mid]
-        let resp = { Messages: [], Spawns: [], Output: [] }
-        if (qres.error) {
-          if (
-            tags.reply_on &&
-            (tags.reply_on === "error" || tags.reply_on === "always") &&
-            qres.error
-          ) {
-            const input = {
-              id: Number(tags.reply_id),
-              result: { error: qres.error },
-            }
-            let _tags = this.aob.tag.message({ action: "reply", input }, [
-              { name: "From-Process", value: pid },
-            ])
-            resp.Messages.push({ Target: tags.from_process, Tags: _tags })
-          }
-          resp.Error = qres.error
-          res.json(resp)
-        } else {
-          if (tags.read_only === "True") {
-            resp.Output = JSON.parse(atob(qres.ok))
-          } else {
-            for (let v of qres.ok.attributes) {
-              if (v.key === "action" && v.value === "perform_action") {
-                if (this.msgs[mid]) {
-                  if (
-                    tags.reply_on &&
-                    (tags.reply_on === "success" ||
-                      tags.reply_on === "always") &&
-                    qres.ok
-                  ) {
-                    const input = {
-                      id: Number(tags.reply_id),
-                      result: { ok: { events: [], data: qres.ok.data } },
-                    }
-                    let _tags = this.aob.tag.message(
-                      { action: "reply", input },
-                      [{ name: "From-Process", value: pid }],
-                    )
-                    resp.Messages.push({
-                      Target: tags.from_process,
-                      Tags: _tags,
-                    })
-                  }
-                }
-              }
-            }
-            for (let v of qres.ok.messages) {
-              const { contract_addr, funds, msg } = v.msg.wasm.execute
-              const { id, reply_on } = v
-              const _msg = JSON.parse(atob(msg))
-              for (let k in _msg) {
-                let custom = [{ name: "From-Process", value: pid }]
-                if (reply_on) {
-                  custom.push({ name: "Reply_On", value: reply_on })
-                  custom.push({
-                    name: "Reply_Id",
-                    value: Number(id).toString(),
-                  })
-                }
-                let tags = this.aob.tag.message(
-                  { input: _msg[k], action: k },
-                  custom,
-                )
-                resp.Messages.push({
-                  Target: contract_addr,
-                  Tags: tags,
-                })
-              }
-            }
-          }
-          res.json(resp)
-        }
-      })
+      if (!mid) return this.bad_request(res)
+      this.getResult(pid, mid, res, Date.now())
     } catch (e) {
-      res.status(400)
-      res.json({ error: "bad request" })
+      console.log(e)
+      return this.bad_request(res)
     }
   }
 }

@@ -3,11 +3,6 @@ const AOB = require("./aobundles")
 if (Arweave.default) Arweave = Arweave.default
 const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
 
-const sleep = x =>
-  new Promise(res => {
-    setTimeout(() => res(), x)
-  })
-
 class CWAO {
   constructor({
     wallet,
@@ -49,14 +44,17 @@ class CWAO {
       r => r.json(),
     )
   }
+
   async state(process) {
     return await fetch(`${this.cu_url}/state/${process}`).then(r =>
       r.arrayBuffer(),
     )
   }
+
   async timestamp() {
     return await fetch(`${this.su_url}/timestamp`).then(r => r.json())
   }
+
   async getSU() {
     return await fetch(`${this.su_url}`).then(r => r.json())
   }
@@ -115,8 +113,6 @@ class CWAO {
 
   async query({ process, action, input = {} }) {
     const { id } = await this.execute({ process, action, input, query: true })
-    await sleep(1000)
-    // need pooling... or mu handles it, or cu handles it?
     const result = await fetch(
       `${this.cu_url}/result/${id}/?process-id=${process}`,
     ).then(v => v.json())
