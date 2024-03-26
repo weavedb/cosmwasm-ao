@@ -13,7 +13,7 @@ const Tag = require("./tag")
 module.exports = class Data {
   constructor({
     wallet,
-    network = {
+    arweave = {
       host: "localhost",
       port: 1984,
       protocol: "http",
@@ -22,8 +22,8 @@ module.exports = class Data {
     variant,
   }) {
     this.wallet = wallet
-    this.network = network
-    this.arweave = Arweave.init(network)
+    this.network = arweave
+    this.arweave = Arweave.init(arweave)
     this.tag = new Tag({ protocol, variant })
   }
 
