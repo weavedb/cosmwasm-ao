@@ -2,8 +2,8 @@ const express = require("express")
 const { DataItem } = require("arbundles")
 const Arweave = require("arweave")
 const cors = require("cors")
-//const { AOBundles: AOB, Tag } = require("cwao")
-const { AOBundles: AOB, Tag } = require("../cwao-sdk")
+const { AOBundles: AOB, Tag } = require("cwao")
+
 class Base {
   constructor({ port, arweave, graphql, type, wallet, protocol, variant }) {
     this.graphql = graphql
