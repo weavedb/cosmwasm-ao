@@ -49,7 +49,7 @@ describe("WDB", function () {
     )
 
     const mod_id = await cwao.deploy(_binary)
-    await cwao.addScheduler({ url: "http://localhost:1986" })
+    await cwao.setSU({ url: "http://localhost:1986" })
     const pr = await cwao.instantiate({
       module: mod_id,
       scheduler: sch,
@@ -124,7 +124,7 @@ describe("WDB", function () {
     const addr2_32 = toBech32(addr2, "ao")
     const mod_id = await cwao.deploy(_binary)
 
-    await cwao.addScheduler({ url: "http://localhost:1986" })
+    await cwao.setSU({ url: "http://localhost:1986" })
 
     const sch = await arweave.wallets.jwkToAddress(wallet)
 

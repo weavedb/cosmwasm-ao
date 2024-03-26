@@ -284,7 +284,7 @@ export default function Home() {
               setLoading("scheduler")
               const cwao = new CWAO({ wallet: arweaveWallet })
               const addr = await arweaveWallet.getActiveAddress()
-              await cwao.addScheduler({ url: "http://localhost:1986" })
+              await cwao.setSU({ url: "http://localhost:1986" })
               setScheduler(addr)
               await lf.setItem("scheduler", addr)
               setLoading(null)

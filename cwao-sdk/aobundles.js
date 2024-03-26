@@ -45,27 +45,28 @@ module.exports = class AOBundles {
     }
   }
 
-  async send(tags, _data = "", signer) {
-    const _signer = signer || (await this.signer())
-    const data = await this.data(tags, _data, _signer)
-    const bundle = await this.bundle([data], _signer)
-    const res = await this.post(bundle)
-    return { data, bundle, ...res }
+  async send({ dataitems, bundle, tx, fields, data = "", signer }) {
+    const _signer = signer ?? (await this.signer())
+    if (!tx && !bundle)
+      dataitems ??= [await this.dataitem(fields, data, _signer)]
+    if (!tx) bundle ??= await this.bundle(dataitems, _signer)
+    tx ??= await this.tx(bundle)
+    return { dataitems, bundle, tx, result: await this.post(tx) }
   }
 
-  async data(tags = {}, data = "", signer) {
-    const _signer = signer || (await this.signer())
-    const item = createData(data, _signer, tags)
-    await item.sign(_signer)
-    return item
+  async dataitem(tags = {}, data = "", signer) {
+    const _signer = signer ?? (await this.signer())
+    const dataitem = createData(data, _signer, tags)
+    await dataitem.sign(_signer)
+    return dataitem
   }
 
   async bundle(items, signer) {
-    return await bundleAndSignData(items, signer || (await this.signer()))
+    return await bundleAndSignData(items, signer ?? (await this.signer()))
   }
 
   nest(bundle) {
-    return this.data(
+    return this.dataitem(
       {
         tags: [
           { name: "Bundle-Format", value: "binary" },
@@ -92,9 +93,8 @@ module.exports = class AOBundles {
     return tx
   }
 
-  async post(bundle) {
-    const tx = await this.tx(bundle)
-    return { tx, result: await this.arweave.transactions.post(tx) }
+  async post(tx) {
+    await this.arweave.transactions.post(tx)
   }
 
   owner(item) {
