@@ -145,11 +145,7 @@ class CU extends Base {
         return
       }
       this.eval(pid, () => {
-        if (typeof this.msgs[mid] === "undefined") {
-          res.status(400)
-          res.json({ error: "bad request" })
-          return
-        }
+        if (typeof this.msgs[mid] === "undefined") return this.bad_request(res)
         const tags = parse(this.msgs[mid].tags)
         let qres = this.results[pid][mid]
         let resp = { Messages: [], Spawns: [], Output: [] }
@@ -163,7 +159,7 @@ class CU extends Base {
               id: Number(tags.reply_id),
               result: { error: qres.error },
             }
-            let _tags = this.tag.message({ action: "reply", input }, [
+            let _tags = this.aob.tag.message({ action: "reply", input }, [
               { name: "From-Process", value: pid },
             ])
             resp.Messages.push({ Target: tags.from_process, Tags: _tags })
@@ -187,9 +183,10 @@ class CU extends Base {
                       id: Number(tags.reply_id),
                       result: { ok: { events: [], data: qres.ok.data } },
                     }
-                    let _tags = this.tag.message({ action: "reply", input }, [
-                      { name: "From-Process", value: pid },
-                    ])
+                    let _tags = this.aob.tag.message(
+                      { action: "reply", input },
+                      [{ name: "From-Process", value: pid }],
+                    )
                     resp.Messages.push({
                       Target: tags.from_process,
                       Tags: _tags,
@@ -211,7 +208,7 @@ class CU extends Base {
                     value: Number(id).toString(),
                   })
                 }
-                let tags = this.tag.message(
+                let tags = this.aob.tag.message(
                   { input: _msg[k], action: k },
                   custom,
                 )

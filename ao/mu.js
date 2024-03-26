@@ -64,15 +64,16 @@ class MU extends Base {
     res.send("ao messenger unit")
   }
   async post_root(req, res) {
-    const { valid, item, type } = await this.verifyItem(req.body)
-    if (!valid || !includes(type, ["Message", "Process"])) {
-      return this.bad_request(res)
-    }
     try {
+      const { valid, item, type } = await this.aob.verifyItem(req.body)
+      if (!valid || !includes(type, ["Message", "Process"])) {
+        return this.bad_request(res)
+      }
       const { error, id } = await this.send(item)
       if (error) return this.bad_request(res)
       res.json({ id })
     } catch (e) {
+      console.log(e)
       return this.bad_request(res)
     }
   }

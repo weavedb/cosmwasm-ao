@@ -1,5 +1,4 @@
 const express = require("express")
-const { DataItem } = require("arbundles")
 const Arweave = require("arweave")
 const cors = require("cors")
 const { AOBundles: AOB, Tag } = require("cwao")
@@ -16,8 +15,9 @@ class Base {
     this.server.use(express.json())
     this.server.use(cors())
     this.wallet = wallet
-    this.tag = new Tag({ protocol, variant })
     this.aob = new AOB({
+      protocol,
+      variant,
       wallet: this.wallet,
       network: this.network,
       graphql: this.graphql,
@@ -32,19 +32,9 @@ class Base {
       }
     }
   }
+
   bad_request(res, error = "bad request") {
-    res({ error })
-  }
-  async verifyItem(binary) {
-    let item = null
-    let valid = await DataItem.verify(binary)
-    let type = null
-    if (valid) {
-      item = new DataItem(binary)
-      await item.setSignature(item.rawSignature)
-      ;({ valid, type } = this.tag.validate(item))
-    }
-    return { item, valid, type }
+    res.json({ error })
   }
 
   start() {

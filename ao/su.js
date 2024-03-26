@@ -47,10 +47,10 @@ class SU extends Base {
   }
   async post_root(req, res) {
     try {
-      const { type, valid, item } = await this.verifyItem(req.body)
+      const { type, valid, item } = await this.aob.verifyItem(req.body)
       const timestamp = Date.now()
       if (!valid) return this.bad_request(res)
-      const { valid: tag_valid } = this.tag.validate(item)
+      const { valid: tag_valid } = this.aob.tag.validate(item)
       const m = parse(item.tags)
       const read_only = m.read_only === "True"
       const address = this.aob.owner(item)
@@ -77,7 +77,7 @@ class SU extends Base {
         res.json({ id: tx.id, timestamp })
       } else if (type === "Message") {
         this.hash = genHash(this.hash, item.id)
-        const tags = this.tag.assignment({
+        const tags = this.aob.tag.assignment({
           process: item.target,
           epoch: ++this.epoch,
           nonce: ++this.nonce,

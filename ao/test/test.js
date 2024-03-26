@@ -42,7 +42,6 @@ describe("WDB", function () {
     expect((await cwao.getCU()).address).to.eql(sch)
     expect((await cwao.getSU()).Address).to.eql(sch)
     expect((await cwao.timestamp()).block_height).to.eql(0)
-
     const _binary = await getModule(
       "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
@@ -54,7 +53,6 @@ describe("WDB", function () {
       scheduler: sch,
       input: { num: 4 },
     })
-
     const pr2 = await cwao.instantiate({
       module: mod_id,
       scheduler: sch,
