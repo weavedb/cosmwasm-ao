@@ -50,7 +50,7 @@ class CU extends Base {
 
   async instantiate(pid) {
     // refresh if more than expiry
-    this.su[pid] ??= await this.aob.getSUByProcess(pid)
+    this.su[pid] ??= await this.gql.getSU({ process: pid })
     if (!this.su[pid]) return
     this.msgs[pid] = await new SU({ url: this.su[pid] }).processes(pid)
     const process = this.aob.tag.parse(this.msgs[pid].tags)

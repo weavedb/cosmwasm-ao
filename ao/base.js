@@ -1,7 +1,8 @@
 const express = require("express")
 const Arweave = require("arweave")
 const cors = require("cors")
-const { CWAO, AOBundles } = require("cwao")
+const { GQL, AOBundles } = require("cwao")
+
 class Base {
   constructor({
     port,
@@ -25,12 +26,12 @@ class Base {
     this.server.use(express.json())
     this.server.use(cors())
     this.wallet = wallet
+    this.gql = new GQL({ url: this.graphql })
     this.aob = new AOBundles({
       protocol,
       variant,
       wallet: this.wallet,
       network: this.network,
-      graphql: this.graphql,
     })
   }
 
