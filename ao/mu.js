@@ -32,9 +32,9 @@ class MU extends Base {
     const tags = this.aob.tag.parse(item.tags)
     let url = null
     if (tags.type === "Message") {
-      url = await this.aob.getSUByProcess(item.target)
+      url = await this.gql.getSU({ process: item.target })
     } else if (tags.type === "Process") {
-      url = await this.aob.getSU(tags.scheduler)
+      url = await this.gql.getSU({ address: tags.scheduler })
     }
     if (!url) return { error: true }
     let su_res = null

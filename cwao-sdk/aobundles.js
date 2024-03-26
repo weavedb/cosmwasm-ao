@@ -10,23 +10,6 @@ let Arweave = require("arweave")
 if (Arweave.default) Arweave = Arweave.default
 const Tag = require("./tag")
 
-const query_scheduler = process => `query {
-    transactions (sort: HEIGHT_DESC, owners: ["${process}"], tags:[ { name: "Type", values: ["Scheduler-Location"] }]){
-        edges {
-            node {
-                id
-                owner {
-                    address
-                }
-                tags {
-                  name
-                  value
-                }
-             }
-        }
-    }
-}`
-
 module.exports = class AOBundles {
   constructor({
     wallet,
@@ -35,14 +18,12 @@ module.exports = class AOBundles {
       port: 1984,
       protocol: "http",
     },
-    graphql = "http://localhost:1984/graphql",
     protocol,
     variant,
   }) {
     this.wallet = wallet
     this.network = network
     this.arweave = Arweave.init(network)
-    this.graphql = graphql
     this.tag = new Tag({ protocol, variant })
   }
 
@@ -116,66 +97,6 @@ module.exports = class AOBundles {
     return { tx, result: await this.arweave.transactions.post(tx) }
   }
 
-  async get(
-    id,
-    node = `{ id anchor signature recipient owner { address key } fee { winston ar } tags { name value } data { size type } block { id timestamp height previous } parent { id } }`,
-  ) {
-    try {
-      const query = `query {
-    transactions (sort: HEIGHT_DESC, ids: ["${id}"]){
-        edges {
-            node ${node}
-        }
-    }
-}`
-      return (
-        (
-          await fetch(this.graphql, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ query }),
-          }).then(r => r.json())
-        )?.data.transactions.edges[0]?.node ?? null
-      )
-    } catch (e) {
-      return null
-    }
-  }
-
-  async getSU(process) {
-    let url = null
-    try {
-      const su = (
-        await fetch(this.graphql, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ query: query_scheduler(process) }),
-        }).then(r => r.json())
-      ).data.transactions.edges
-      for (let v of su) {
-        if (v.node.owner.address === process) {
-          url = this.tag.parse(v.node.tags).url.replace(/\/$/, "")
-          break
-        }
-      }
-    } catch (e) {
-      console.log(e)
-    }
-    return url
-  }
-  async getSUByProcess(process) {
-    try {
-      const tx = await this.get(process, `{ id tags { name value } }`)
-      if (!tx) return null
-      return await this.getSU(this.tag.parse(tx.tags).scheduler)
-    } catch (e) {
-      return null
-    }
-  }
   owner(item) {
     const hashBuffer = crypto
       .createHash("sha256")
