@@ -1,9 +1,20 @@
 const express = require("express")
 const Arweave = require("arweave")
 const cors = require("cors")
-const { AOBundles } = require("cwao")
+const { CWAO, AOBundles } = require("cwao")
 class Base {
-  constructor({ port, arweave, graphql, type, wallet, protocol, variant }) {
+  constructor({
+    port,
+    arweave,
+    graphql,
+    type,
+    wallet,
+    protocol,
+    variant,
+    mu_url,
+    su_url,
+    cu_url,
+  }) {
     this.graphql = graphql
     this.type = type
     this.port = port

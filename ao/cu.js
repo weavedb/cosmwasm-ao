@@ -2,6 +2,7 @@ const express = require("express")
 const Arweave = require("arweave")
 const Base = require("./base")
 const { VM } = require("./cosmwasm")
+const { SU } = require("cwao")
 
 class CU extends Base {
   constructor({
@@ -51,9 +52,7 @@ class CU extends Base {
     // refresh if more than expiry
     this.su[pid] ??= await this.aob.getSUByProcess(pid)
     if (!this.su[pid]) return
-    this.msgs[pid] = await fetch(`${this.su[pid]}/processes/${pid}`).then(r =>
-      r.json(),
-    )
+    this.msgs[pid] = await new SU({ url: this.su[pid] }).processes(pid)
     const process = this.aob.tag.parse(this.msgs[pid].tags)
     this.vms[pid] = await this.getModule(process.module, pid)
     const input = JSON.parse(process.input)
@@ -88,8 +87,7 @@ class CU extends Base {
 
   async execute(pid) {
     if (typeof this.su[pid] === "undefined") return
-    const pmap = (await fetch(`${this.su[pid]}/${pid}`).then(r => r.json()))
-      .edges
+    const pmap = (await new SU({ url: this.su[pid] }).process(pid)).edges
     for (let v of pmap) {
       const id = v.node.message.id
       if (this.results[pid][id]) continue
