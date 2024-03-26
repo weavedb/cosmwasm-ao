@@ -160,7 +160,7 @@ const { Data } = require("cwao")
 const data = new Data({ protocol, variant, wallet, arweave })
 ```
 
-#### dataitem
+#### `dataitem`
 
 Construct a signed DataItem.
 
@@ -168,7 +168,7 @@ Construct a signed DataItem.
 const dataitem = await cwao.data.dataitem({ fields, data, signer })
 ```
 
-#### bundle
+#### `bundle`
 
 Construct a signed Bundle.
 
@@ -177,7 +177,7 @@ const dataitems = [ dataitem_1, dataitem_2, dataitem_3, ... ]
 const bundle = await cwao.data.bundle({ dataitems, signer })
 ```
 
-#### tx
+#### `tx`
 
 Construct a signed transaction.
 
@@ -185,7 +185,7 @@ Construct a signed transaction.
 const tx = await cwao.data.tx({ bundle })
 ```
 
-#### post
+#### `post`
 
 Post a transaction to Arweave.
 
@@ -193,7 +193,7 @@ Post a transaction to Arweave.
 const result = await cwao.data.post({ tx })
 ```
 
-#### send
+#### `send`
 
 An omni-send function. you can pass any of the previous data objects and it just works.
 
@@ -201,7 +201,7 @@ An omni-send function. you can pass any of the previous data objects and it just
 const json = await cwao.data.send({ fields, data, dataitems, bundle, tx, signer })
 ```
 
-#### nest
+#### `nest`
 
 To next bundles, it adds the necessary tags to a Bundle.
 
@@ -210,7 +210,7 @@ const nestable = cwao.data.nest(bundle)
 const dataitem = await cwao.data.dataitem({ fields, data: nestable, signer })
 ```
 
-#### verifyItem
+#### `verifyItem`
 
 Validate AO compatibility of a DataItem in binary format.
 
@@ -227,7 +227,7 @@ const { Tag } = require("cwao")
 const tag = new Tag({ protocol, variant })
 ```
 
-#### module
+#### `module`
 
 Constract a tag for Module message.
 
@@ -238,7 +238,7 @@ const tags = cwao.data.tag.module(
 )
 ```
 
-#### scheduler
+#### `scheduler`
 
 Constract a tag for Scheduler-Location message.
 
@@ -246,7 +246,7 @@ Constract a tag for Scheduler-Location message.
 const tags = cwao.data.tag.scheduler({ url, ttl }, custom )
 ```
 
-#### process
+#### `process`
 
 Constract a tag for Process message.
 
@@ -254,7 +254,7 @@ Constract a tag for Process message.
 const tags = cwao.data.tag.process({ module, scheduler }, custom )
 ```
 
-#### message
+#### `message`
 
 Constract a normal Message message.
 
@@ -262,7 +262,7 @@ Constract a normal Message message.
 const tags = cwao.data.tag.message({ action, input, read_only }, custom )
 ```
 
-#### assignment
+#### `assignment`
 
 Constract an Assignement message.
 
@@ -273,7 +273,7 @@ const tags = cwao.data.tag.assignment(
 )
 ```
 
-#### validate
+#### `validate`
 
 Validate tags.
 
@@ -290,14 +290,14 @@ const { GQL } = require("cwao")
 const gql = new GQL({ url })
 ```
 
-#### getTx
+#### `getTx`
 
 ```javascript
 const node_query = `{ id owner { address } tags { name value } }`
 const tx = await gql.getTx(id, node_query)
 ```
 
-#### getSU
+#### `getSU`
 
 To get a SU URL, either path `scheduler_address` or `process_id`.
 
