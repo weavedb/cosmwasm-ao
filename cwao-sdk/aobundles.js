@@ -1,5 +1,6 @@
 const crypto = require("crypto")
 const {
+  DataItem,
   ArconnectSigner,
   ArweaveSigner,
   createData,
@@ -7,6 +8,7 @@ const {
 } = require("arbundles")
 let Arweave = require("arweave")
 if (Arweave.default) Arweave = Arweave.default
+const Tag = require("./tag")
 
 module.exports = class AOBundles {
   constructor({
@@ -17,11 +19,14 @@ module.exports = class AOBundles {
       protocol: "http",
     },
     graphql = "http://localhost:1984/graphql",
+    protocol,
+    variant,
   }) {
     this.wallet = wallet
     this.network = network
     this.arweave = Arweave.init(network)
     this.graphql = graphql
+    this.tag = new Tag({ protocol, variant })
   }
   async signer() {
     if (this.wallet.sign) {
@@ -114,5 +119,16 @@ module.exports = class AOBundles {
       .update(item.rawOwner)
       .digest()
     return hashBuffer.toString("base64url")
+  }
+  async verifyItem(binary) {
+    let item = null
+    let valid = await DataItem.verify(binary)
+    let type = null
+    if (valid) {
+      item = new DataItem(binary)
+      await item.setSignature(item.rawSignature)
+      ;({ valid, type } = this.tag.validate(item))
+    }
+    return { item, valid, type }
   }
 }
