@@ -45,16 +45,16 @@ class CWAO {
     return tx.id
   }
 
-  async addScheduler({ url, ttl, tags }) {
+  async setSU({ url, ttl, tags }) {
     tags ??= this.aob.tag.scheduler({ url, ttl })
-    const { tx } = await this.aob.send({ tags })
+    const { tx } = await this.aob.send({ fields: { tags } })
     return tx.id
   }
 
   async instantiate({ module, scheduler, input, tags }) {
     tags ??= this.aob.tag.process({ module, scheduler })
     if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
-    const item = await this.aob.data({ tags })
+    const item = await this.aob.dataitem({ tags })
     return await this.mu.post(item)
   }
 
@@ -69,7 +69,7 @@ class CWAO {
       signer = new ArweaveSigner(this.query_wallet)
     }
     let tags = this.aob.tag.message({ input, action, read_only })
-    const item = await this.aob.data({ target: process, tags }, "", signer)
+    const item = await this.aob.dataitem({ target: process, tags }, "", signer)
     return await this.mu.post(item)
   }
 

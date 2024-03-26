@@ -68,8 +68,7 @@ class SU extends Base {
         }
       }
       if (type === "read_only") {
-        const bundle = await this.aob.bundle([item])
-        const tx = await this.aob.tx(bundle)
+        const tx = await this.aob.tx(await this.aob.bundle([item]))
         res.status(201)
         res.json({ id: tx.id, timestamp })
       } else if (type === "Message") {
@@ -82,14 +81,12 @@ class SU extends Base {
           timestamp,
           height: (await this.arweave.blocks.getCurrent()).height,
         })
-        const assignment = await this.aob.data({ tags })
-        const bundle = await this.aob.bundle([item, assignment])
-        const { tx } = await this.aob.post(bundle)
+        const assignment = await this.aob.dataitem({ tags })
+        await this.aob.send({ dataitems: [item, assignment] })
         res.status(201)
         res.json({ id: assignment.id, timestamp })
       } else if (type === "Process") {
-        const bundle = await this.aob.bundle([item])
-        const { tx } = await this.aob.post(bundle)
+        const { tx } = await this.aob.send({ dataitems: [item] })
         res.status(201)
         res.json({ id: tx.id, timestamp })
       }

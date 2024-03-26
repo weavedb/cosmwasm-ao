@@ -77,7 +77,7 @@ const module_binary = require("fs").readFileSync(module_binary_file_path)
 const module_txid = await cwao.deploy(module_binary)
 
 // assign scheduler unit to wallet address
-await cwao.addScheduler({ url: "http://localhost:1986" })
+await cwao.setSU({ url: "http://localhost:1986" })
 
 // get scheduler address for the process
 const scheduler_address = await cwao.arweave.wallets.jwkToAddress(wallet)

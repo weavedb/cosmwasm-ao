@@ -55,7 +55,7 @@ class MU extends Base {
           if (json.Error) console.log(json.Error)
           for (let v of json.Messages ?? []) {
             const _id = await this.send(
-              await this.aob.data({ target: v.Target, tags: v.Tags }),
+              await this.aob.dataitem({ target: v.Target, tags: v.Tags }),
             )
           }
         })
