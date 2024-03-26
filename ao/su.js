@@ -48,10 +48,18 @@ class SU extends Base {
   async post_root(req, res) {
     try {
       let type = null
+      let valid = false
       let m = {}
       const timestamp = Date.now()
       const bundle = new Bundle(req.body)
+      if (!(await bundle.verify())) {
+        res.status(400)
+        res.json({ error: "bad request" })
+        return
+      }
       for (let v of bundle.items) {
+        ;({ type, valid } = this.tag.validate(v))
+        if (!valid) break
         m = parse(v.tags)
         if (m.read_only === "True") type = "read_only"
         const address = this.aob.owner(v)
@@ -73,6 +81,11 @@ class SU extends Base {
             owner: address,
           }
         }
+      }
+      if (!valid) {
+        res.status(400)
+        res.json({ error: "bad request" })
+        return
       }
       if (type === "message") {
         const current = bundle.items[0].id

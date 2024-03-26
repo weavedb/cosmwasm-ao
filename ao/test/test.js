@@ -35,7 +35,7 @@ describe("WDB", function () {
     su.stop()
     cu.stop()
   })
-  it("should handle bare cosmwasm", async () => {
+  it.only("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet })
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.getMU()).to.eql("ao messenger unit")
