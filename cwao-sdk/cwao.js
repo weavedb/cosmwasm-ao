@@ -116,6 +116,7 @@ class CWAO {
   async query({ process, action, input = {} }) {
     const { id } = await this.execute({ process, action, input, query: true })
     await sleep(1000)
+    // need pooling... or mu handles it, or cu handles it?
     const result = await fetch(
       `${this.cu_url}/result/${id}/?process-id=${process}`,
     ).then(v => v.json())
