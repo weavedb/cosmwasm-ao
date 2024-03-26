@@ -1,4 +1,5 @@
 const express = require("express")
+const { DataItem } = require("arbundles")
 const Arweave = require("arweave")
 const cors = require("cors")
 //const { AOBundles: AOB, Tag } = require("cwao")
@@ -31,6 +32,21 @@ class Base {
       }
     }
   }
+  bad_request(res, error = "bad request") {
+    res({ error })
+  }
+  async verifyItem(binary) {
+    let item = null
+    let valid = await DataItem.verify(binary)
+    let type = null
+    if (valid) {
+      item = new DataItem(binary)
+      await item.setSignature(item.rawSignature)
+      ;({ valid, type } = this.tag.validate(item))
+    }
+    return { item, valid, type }
+  }
+
   start() {
     this.app = this.server.listen(this.port, () =>
       console.log(`${this.type} on port ${this.port}`),

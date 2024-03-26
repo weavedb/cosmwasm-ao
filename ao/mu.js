@@ -1,6 +1,6 @@
 const express = require("express")
 const Arweave = require("arweave")
-const { groupBy, map, prop } = require("ramda")
+const { includes, groupBy, map, prop } = require("ramda")
 const { DataItem } = require("arbundles")
 const Base = require("./base")
 const { getSUByProcess, getSU, parse } = require("./utils")
@@ -24,20 +24,21 @@ class MU extends Base {
     this.init()
   }
   async send(item) {
+    let error = null
     const tags = parse(item.tags)
-    let url = "http://localhost:1986"
+    let url = null
     if (tags.type === "Message") {
       url = await getSUByProcess(item.target, this.graphql)
     } else if (tags.type === "Process") {
       url = await getSU(tags.scheduler, this.graphql)
     }
-    const bundle = await this.aob.bundle([item])
+    if (!url) return { error: true }
     await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
       },
-      body: bundle.getRaw(),
+      body: item.getRaw(),
     }).then(r => r.json())
     if (tags.type === "Message") {
       fetch(`${this.cu_url}/result/${item.id}?process-id=${item.target}`)
@@ -57,35 +58,22 @@ class MU extends Base {
           console.log(e)
         })
     }
-    return item.id
-  }
-  async verify(binary) {
-    let item = null
-    let valid = await DataItem.verify(binary)
-    let type = null
-    if (valid) {
-      item = new DataItem(binary)
-      await item.setSignature(item.rawSignature)
-      ;({ valid, type } = this.tag.validate(item))
-    }
-    return { item, valid, type }
+    return { error: null, id: item.id }
   }
   async get_root(req, res) {
     res.send("ao messenger unit")
   }
   async post_root(req, res) {
-    const { valid, item } = await this.verify(req.body)
-    if (!valid) {
-      res.status(400)
-      res.json({ error: "bad request" })
-      return
+    const { valid, item, type } = await this.verifyItem(req.body)
+    if (!valid || !includes(type, ["Message", "Process"])) {
+      return this.bad_request(res)
     }
     try {
-      const id = await this.send(item)
+      const { error, id } = await this.send(item)
+      if (error) return this.bad_request(res)
       res.json({ id })
     } catch (e) {
-      res.status(400)
-      res.json({ error: "bad request" })
+      return this.bad_request(res)
     }
   }
   init() {
