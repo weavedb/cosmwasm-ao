@@ -23,6 +23,7 @@ class Base {
       graphql: this.graphql,
     })
   }
+
   router(router) {
     for (const method in router) {
       for (const pth in router[method]) {
