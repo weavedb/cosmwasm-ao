@@ -15,7 +15,7 @@
     "@emotion/styled": "^11.11.0",
     "arbundles": "^0.11.0",
     "arweave": "^1.15.0",
-    "cwao": "^0.3.0",
+    "cwao": "^0.3.1",
     "framer-motion": "^11.0.20",
     "localforage": "^1.10.0",
     "next": "14.1.4",

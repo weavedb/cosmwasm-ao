@@ -44,13 +44,13 @@ class SU extends Base {
   }
   async post_root(req, res) {
     try {
-      const { type, valid, item } = await this.aob.verifyItem(req.body)
+      const { type, valid, item } = await this.data.verifyItem(req.body)
       const timestamp = Date.now()
       if (!valid) return this.bad_request(res)
-      const { valid: tag_valid } = this.aob.tag.validate(item)
-      const m = this.aob.tag.parse(item.tags)
+      const { valid: tag_valid } = this.data.tag.validate(item)
+      const m = this.data.tag.parse(item.tags)
       const read_only = m.read_only === "True"
-      const address = this.aob.owner(item)
+      const address = this.data.owner(item)
       if (type === "Message") {
         if (!this.pmap[item.target]) this.pmap[item.target] = []
         this.pmap[item.target].push({
@@ -68,12 +68,12 @@ class SU extends Base {
         }
       }
       if (type === "read_only") {
-        const tx = await this.aob.tx(await this.aob.bundle([item]))
+        const tx = await this.data.tx(await this.data.bundle([item]))
         res.status(201)
         res.json({ id: tx.id, timestamp })
       } else if (type === "Message") {
         this.hash = genHash(this.hash, item.id)
-        const tags = this.aob.tag.assignment({
+        const tags = this.data.tag.assignment({
           process: item.target,
           epoch: ++this.epoch,
           nonce: ++this.nonce,
@@ -81,12 +81,12 @@ class SU extends Base {
           timestamp,
           height: (await this.arweave.blocks.getCurrent()).height,
         })
-        const assignment = await this.aob.dataitem({ tags })
-        await this.aob.send({ dataitems: [item, assignment] })
+        const assignment = await this.data.dataitem({ tags })
+        await this.data.send({ dataitems: [item, assignment] })
         res.status(201)
         res.json({ id: assignment.id, timestamp })
       } else if (type === "Process") {
-        const { tx } = await this.aob.send({ dataitems: [item] })
+        const { tx } = await this.data.send({ dataitems: [item] })
         res.status(201)
         res.json({ id: tx.id, timestamp })
       }

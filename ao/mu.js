@@ -29,7 +29,7 @@ class MU extends Base {
 
   async send(item, res) {
     let error = null
-    const tags = this.aob.tag.parse(item.tags)
+    const tags = this.data.tag.parse(item.tags)
     let url = null
     if (tags.type === "Message") {
       url = await this.gql.getSU({ process: item.target })
@@ -55,7 +55,7 @@ class MU extends Base {
           if (json.Error) console.log(json.Error)
           for (let v of json.Messages ?? []) {
             const _id = await this.send(
-              await this.aob.dataitem({ target: v.Target, tags: v.Tags }),
+              await this.data.dataitem({ target: v.Target, tags: v.Tags }),
             )
           }
         })
@@ -73,7 +73,7 @@ class MU extends Base {
   async post_root(req, res) {
     let _item = null
     try {
-      const { valid, item, type } = await this.aob.verifyItem(req.body)
+      const { valid, item, type } = await this.data.verifyItem(req.body)
       if (!valid || !includes(type, ["Message", "Process"])) {
         return this.bad_request(res)
       }
