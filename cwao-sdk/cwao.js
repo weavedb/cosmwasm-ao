@@ -3,7 +3,7 @@ if (Arweave.default) Arweave = Arweave.default
 
 const AOB = require("./aobundles")
 const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
-
+const CU = require("./cu")
 class CWAO {
   constructor({
     wallet,
@@ -29,6 +29,7 @@ class CWAO {
       network: this.network,
       graphql: this.graphql,
     })
+    this.cu = new CU({ url: this.cu_url })
   }
 
   async deploy(mod, tags) {
@@ -40,28 +41,12 @@ class CWAO {
     return tx.id
   }
 
-  async getMessage(mid, pid) {
-    return await fetch(`${this.cu_url}/result/${mid}?process-id=${pid}`).then(
-      r => r.json(),
-    )
-  }
-
-  async state(process) {
-    return await fetch(`${this.cu_url}/state/${process}`).then(r =>
-      r.arrayBuffer(),
-    )
-  }
-
   async timestamp() {
     return await fetch(`${this.su_url}/timestamp`).then(r => r.json())
   }
 
   async getSU() {
     return await fetch(`${this.su_url}`).then(r => r.json())
-  }
-
-  async getCU() {
-    return await fetch(`${this.cu_url}`).then(r => r.json())
   }
 
   async getMU() {
@@ -114,9 +99,7 @@ class CWAO {
 
   async query({ process, action, input = {} }) {
     const { id } = await this.execute({ process, action, input, query: true })
-    const result = await fetch(
-      `${this.cu_url}/result/${id}/?process-id=${process}`,
-    ).then(v => v.json())
+    const result = await this.cu.result(id, process)
     return result.Output
   }
 }

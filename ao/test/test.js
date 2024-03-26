@@ -39,7 +39,7 @@ describe("WDB", function () {
     const cwao = new CWAO({ wallet })
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.getMU()).to.eql("ao messenger unit")
-    expect((await cwao.getCU()).address).to.eql(sch)
+    expect((await cwao.cu.get()).address).to.eql(sch)
     expect((await cwao.getSU()).Address).to.eql(sch)
     expect((await cwao.timestamp()).block_height).to.eql(0)
     const _binary = await getModule(
@@ -109,7 +109,7 @@ describe("WDB", function () {
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
     ).to.eql({ num: 14 })
 
-    expect((await cwao.state(pr.id)).byteLength).to.eql(1179648)
+    expect((await cwao.cu.state(pr.id)).byteLength).to.eql(1179648)
   })
 
   it("should handle cw20 token", async () => {
@@ -178,6 +178,6 @@ describe("WDB", function () {
       action: "transfer",
       input: { recipient: addr2_32, amount: "20000000" },
     })
-    expect((await cwao.getMessage(id, pr.id)).Error).to.exist
+    expect((await cwao.cu.result(id, pr.id)).Error).to.exist
   })
 })
