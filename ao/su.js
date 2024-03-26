@@ -47,76 +47,58 @@ class SU extends Base {
   }
   async post_root(req, res) {
     try {
-      let type = null
-      let valid = false
-      let m = {}
+      const { type, valid, item } = await this.verifyItem(req.body)
       const timestamp = Date.now()
-      const bundle = new Bundle(req.body)
-      if (!(await bundle.verify())) {
-        res.status(400)
-        res.json({ error: "bad request" })
-        return
-      }
-      for (let v of bundle.items) {
-        ;({ type, valid } = this.tag.validate(v))
-        if (!valid) break
-        m = parse(v.tags)
-        if (m.read_only === "True") type = "read_only"
-        const address = this.aob.owner(v)
-        if (m.type === "Message") {
-          type = "message"
-          if (!this.pmap[v.target]) this.pmap[v.target] = []
-          this.pmap[v.target].push({
-            id: v.id,
-            owner: address,
-            ts: timestamp,
-            item: v,
-          })
-        } else if (m.type === "Process") {
-          type = "process"
-          this.processes[v.id] = {
-            id: v.id,
-            tx: Date.now(),
-            process: v,
-            owner: address,
-          }
+      if (!valid) return this.bad_request(res)
+      const { valid: tag_valid } = this.tag.validate(item)
+      const m = parse(item.tags)
+      const read_only = m.read_only === "True"
+      const address = this.aob.owner(item)
+      if (type === "Message") {
+        if (!this.pmap[item.target]) this.pmap[item.target] = []
+        this.pmap[item.target].push({
+          id: item.id,
+          owner: address,
+          ts: timestamp,
+          item,
+        })
+      } else if (type === "Process") {
+        this.processes[item.id] = {
+          id: item.id,
+          tx: Date.now(),
+          process: item,
+          owner: address,
         }
       }
-      if (!valid) {
-        res.status(400)
-        res.json({ error: "bad request" })
-        return
-      }
-      if (type === "message") {
-        const current = bundle.items[0].id
-        this.hash = genHash(this.hash, current)
+      if (type === "read_only") {
+        const bundle = await this.aob.bundle([item])
+        const tx = await this.aob.tx(bundle)
+        res.status(201)
+        res.json({ id: tx.id, timestamp })
+      } else if (type === "Message") {
+        this.hash = genHash(this.hash, item.id)
         const tags = this.tag.assignment({
-          process: m.process,
+          process: item.target,
           epoch: ++this.epoch,
           nonce: ++this.nonce,
           hash: this.hash,
           timestamp,
           height: (await this.arweave.blocks.getCurrent()).height,
         })
-        const { data } = await this.aob.send(
-          tags,
-          this.aob.nest(bundle).rawData,
-        )
-        res.status(201)
-        res.json({ id: data.id, timestamp })
-      } else if (type === "process") {
+        const assignment = await this.aob.data({ tags })
+        const bundle = await this.aob.bundle([item, assignment])
         const { tx } = await this.aob.post(bundle)
         res.status(201)
-        res.json({ id: tx, timestamp })
-      } else if (type === "read_only") {
-        const tx = await this.aob.tx(bundle)
+        res.json({ id: assignment.id, timestamp })
+      } else if (type === "Process") {
+        const bundle = await this.aob.bundle([item])
+        const { tx } = await this.aob.post(bundle)
         res.status(201)
         res.json({ id: tx.id, timestamp })
       }
     } catch (e) {
       console.log(e)
-      res.status(400)
-      res.json({ error: "bad request" })
+      return this.bad_request(res)
     }
   }
   async get_root(req, res) {
