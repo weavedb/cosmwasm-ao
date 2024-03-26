@@ -1,9 +1,5 @@
-const express = require("express")
-const Arweave = require("arweave")
-const { includes, groupBy, map, prop } = require("ramda")
-const { DataItem } = require("arbundles")
+const { includes } = require("ramda")
 const Base = require("./base")
-const { getSUByProcess, getSU, parse } = require("./utils")
 
 class MU extends Base {
   constructor({
@@ -25,12 +21,12 @@ class MU extends Base {
   }
   async send(item, res) {
     let error = null
-    const tags = parse(item.tags)
+    const tags = this.aob.tag.parse(item.tags)
     let url = null
     if (tags.type === "Message") {
-      url = await getSUByProcess(item.target, this.graphql)
+      url = await this.aob.getSUByProcess(item.target)
     } else if (tags.type === "Process") {
-      url = await getSU(tags.scheduler, this.graphql)
+      url = await this.aob.getSU(tags.scheduler)
     }
     if (!url) return { error: true }
     let su_res = null
@@ -45,23 +41,27 @@ class MU extends Base {
     } catch (e) {}
     if (!su_res?.id) return this.bad_request(res)
     const start = Date.now()
-    const to = setTimeout(() => this.bad_request(res), 3000)
-    fetch(`${this.cu_url}/result/${item.id}?process-id=${item.target}`)
-      .then(r => r.json())
-      .then(async json => {
-        clearTimeout(to)
-        if (res) res.json({ id: item.id })
-        if (json.Error) console.log(json.Error)
-        for (let v of json.Messages ?? []) {
-          const _id = await this.send(
-            await this.aob.data({ target: v.Target, tags: v.Tags }),
-          )
-        }
-      })
-      .catch(e => {
-        console.log(e)
-        if (res) this.bad_request(res)
-      })
+    if (tags.type === "Process") {
+      res.json({ id: item.id })
+    } else {
+      const to = setTimeout(() => this.bad_request(res), 3000)
+      fetch(`${this.cu_url}/result/${item.id}?process-id=${item.target}`)
+        .then(r => r.json())
+        .then(async json => {
+          clearTimeout(to)
+          if (res) res.json({ id: item.id })
+          if (json.Error) console.log(json.Error)
+          for (let v of json.Messages ?? []) {
+            const _id = await this.send(
+              await this.aob.data({ target: v.Target, tags: v.Tags }),
+            )
+          }
+        })
+        .catch(e => {
+          console.log(e)
+          if (res) this.bad_request(res)
+        })
+    }
   }
   async get_root(req, res) {
     res.send("ao messenger unit")

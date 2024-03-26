@@ -1,6 +1,5 @@
 const express = require("express")
 const Arweave = require("arweave")
-const { getSUByProcess, parse } = require("./utils")
 const Base = require("./base")
 const { VM } = require("./cosmwasm")
 
@@ -49,12 +48,13 @@ class CU extends Base {
   }
 
   async instantiate(pid) {
-    this.su[pid] ??= await getSUByProcess(pid, this.graphql)
-    if (typeof this.su[pid] === "undefined") return
+    // refresh if more than expiry
+    this.su[pid] ??= await this.aob.getSUByProcess(pid)
+    if (!this.su[pid]) return
     this.msgs[pid] = await fetch(`${this.su[pid]}/processes/${pid}`).then(r =>
       r.json(),
     )
-    const process = parse(this.msgs[pid].tags)
+    const process = this.aob.tag.parse(this.msgs[pid].tags)
     this.vms[pid] = await this.getModule(process.module, pid)
     const input = JSON.parse(process.input)
     this.results[pid] ??= {}
@@ -94,7 +94,7 @@ class CU extends Base {
       const id = v.node.message.id
       if (this.results[pid][id]) continue
       try {
-        const tags = parse(v.node.message.tags)
+        const tags = this.aob.tag.parse(v.node.message.tags)
         const input = JSON.parse(tags.input)
         let res = null
         if (tags.read_only === "True") {
@@ -131,7 +131,7 @@ class CU extends Base {
   }
   parseResult(pid, mid) {
     let resp = { Messages: [], Spawns: [], Output: [] }
-    const tags = parse(this.msgs[mid].tags)
+    const tags = this.aob.tag.parse(this.msgs[mid].tags)
     let qres = this.results[pid][mid]
     if (qres.error) {
       if (
