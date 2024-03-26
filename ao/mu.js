@@ -1,5 +1,6 @@
 const { includes } = require("ramda")
 const Base = require("./base")
+const { CU, SU } = require("cwao")
 
 class MU extends Base {
   constructor({
@@ -38,13 +39,7 @@ class MU extends Base {
     if (!url) return { error: true }
     let su_res = null
     try {
-      su_res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/octet-stream",
-        },
-        body: item.getRaw(),
-      }).then(r => r.json())
+      su_res = await new SU({ url }).post(item)
     } catch (e) {}
     if (!su_res?.id) return this.bad_request(res)
     const start = Date.now()
@@ -52,8 +47,8 @@ class MU extends Base {
       res.json({ id: item.id })
     } else {
       const to = setTimeout(() => this.bad_request(res), 3000)
-      fetch(`${this.cu_url}/result/${item.id}?process-id=${item.target}`)
-        .then(r => r.json())
+      new CU({ url: this.cu_url })
+        .result(item.id, item.target)
         .then(async json => {
           clearTimeout(to)
           if (res) res.json({ id: item.id })
@@ -70,9 +65,11 @@ class MU extends Base {
         })
     }
   }
+
   async get_root(req, res) {
     res.send("ao messenger unit")
   }
+
   async post_root(req, res) {
     let _item = null
     try {

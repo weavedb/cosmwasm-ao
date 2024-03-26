@@ -4,6 +4,7 @@ const AOB = require("./aobundles")
 const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
 const CU = require("./cu")
 const MU = require("./mu")
+const SU = require("./su")
 
 class CWAO {
   constructor({
@@ -32,6 +33,7 @@ class CWAO {
     })
     this.cu = new CU({ url: this.cu_url })
     this.mu = new MU({ url: this.mu_url })
+    this.su = new SU({ url: this.su_url })
   }
 
   async deploy(mod, tags) {
@@ -41,14 +43,6 @@ class CWAO {
     await this.arweave.transactions.sign(tx, this.wallet)
     await this.arweave.transactions.post(tx)
     return tx.id
-  }
-
-  async timestamp() {
-    return await fetch(`${this.su_url}/timestamp`).then(r => r.json())
-  }
-
-  async getSU() {
-    return await fetch(`${this.su_url}`).then(r => r.json())
   }
 
   async addScheduler({ url, ttl, tags }) {

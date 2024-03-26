@@ -42,8 +42,8 @@ describe("WDB", function () {
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.mu.get()).to.eql("ao messenger unit")
     expect((await cwao.cu.get()).address).to.eql(sch)
-    expect((await cwao.getSU()).Address).to.eql(sch)
-    expect((await cwao.timestamp()).block_height).to.eql(0)
+    expect((await cwao.su.get()).Address).to.eql(sch)
+    expect((await cwao.su.timestamp()).block_height).to.eql(0)
     const _binary = await getModule(
       "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
@@ -60,7 +60,7 @@ describe("WDB", function () {
       scheduler: sch,
       input: { num: 1 },
     })
-    expect((await cwao.getSU()).Processes).to.eql([pr.id, pr2.id].sort())
+    expect((await cwao.su.get()).Processes).to.eql([pr.id, pr2.id].sort())
     await cwao.execute({ process: pr.id, action: "Add", input: { num: 1 } })
     await cwao.execute({ process: pr2.id, action: "Add", input: { num: 2 } })
 
