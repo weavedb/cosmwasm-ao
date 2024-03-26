@@ -53,7 +53,7 @@ class CU extends Base {
     this.su[pid] ??= await this.gql.getSU({ process: pid })
     if (!this.su[pid]) return
     this.msgs[pid] = await new SU({ url: this.su[pid] }).processes(pid)
-    const process = this.aob.tag.parse(this.msgs[pid].tags)
+    const process = this.data.tag.parse(this.msgs[pid].tags)
     this.vms[pid] = await this.getModule(process.module, pid)
     const input = JSON.parse(process.input)
     this.results[pid] ??= {}
@@ -92,7 +92,7 @@ class CU extends Base {
       const id = v.node.message.id
       if (this.results[pid][id]) continue
       try {
-        const tags = this.aob.tag.parse(v.node.message.tags)
+        const tags = this.data.tag.parse(v.node.message.tags)
         const input = JSON.parse(tags.input)
         let res = null
         if (tags.read_only === "True") {
@@ -129,7 +129,7 @@ class CU extends Base {
   }
   parseResult(pid, mid) {
     let resp = { Messages: [], Spawns: [], Output: [] }
-    const tags = this.aob.tag.parse(this.msgs[mid].tags)
+    const tags = this.data.tag.parse(this.msgs[mid].tags)
     let qres = this.results[pid][mid]
     if (qres.error) {
       if (
@@ -141,7 +141,7 @@ class CU extends Base {
           id: Number(tags.reply_id),
           result: { error: qres.error },
         }
-        let _tags = this.aob.tag.message({ action: "reply", input }, [
+        let _tags = this.data.tag.message({ action: "reply", input }, [
           { name: "From-Process", value: pid },
         ])
         resp.Messages.push({ Target: tags.from_process, Tags: _tags })
@@ -163,7 +163,7 @@ class CU extends Base {
                   id: Number(tags.reply_id),
                   result: { ok: { events: [], data: qres.ok.data } },
                 }
-                let _tags = this.aob.tag.message({ action: "reply", input }, [
+                let _tags = this.data.tag.message({ action: "reply", input }, [
                   { name: "From-Process", value: pid },
                 ])
                 resp.Messages.push({ Target: tags.from_process, Tags: _tags })
@@ -184,7 +184,7 @@ class CU extends Base {
                 value: Number(id).toString(),
               })
             }
-            let tags = this.aob.tag.message(
+            let tags = this.data.tag.message(
               { input: _msg[k], action: k },
               custom,
             )

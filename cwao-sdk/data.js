@@ -10,7 +10,7 @@ let Arweave = require("arweave")
 if (Arweave.default) Arweave = Arweave.default
 const Tag = require("./tag")
 
-module.exports = class AOBundles {
+module.exports = class Data {
   constructor({
     wallet,
     network = {

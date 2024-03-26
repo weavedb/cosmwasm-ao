@@ -1,7 +1,7 @@
 let Arweave = require("arweave")
 if (Arweave.default) Arweave = Arweave.default
-const AOB = require("./aobundles")
-const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
+const Data = require("./data")
+const { ArweaveSigner } = require("arbundles")
 const CU = require("./cu")
 const MU = require("./mu")
 const SU = require("./su")
@@ -26,7 +26,7 @@ class CWAO {
     this.wallet = wallet
     this.network = arweave
     this.arweave = new Arweave(arweave)
-    this.aob = new AOB({
+    this.data = new Data({
       wallet: this.wallet,
       network: this.network,
       graphql: this.graphql,
@@ -37,7 +37,7 @@ class CWAO {
   }
 
   async deploy(mod, tags) {
-    tags ??= this.aob.tag.module({})
+    tags ??= this.data.tag.module({})
     const tx = await this.arweave.createTransaction({ data: mod })
     for (let v of tags) tx.addTag(v.name, v.value)
     await this.arweave.transactions.sign(tx, this.wallet)
@@ -46,15 +46,15 @@ class CWAO {
   }
 
   async setSU({ url, ttl, tags }) {
-    tags ??= this.aob.tag.scheduler({ url, ttl })
-    const { tx } = await this.aob.send({ fields: { tags } })
+    tags ??= this.data.tag.scheduler({ url, ttl })
+    const { tx } = await this.data.send({ fields: { tags } })
     return tx.id
   }
 
   async instantiate({ module, scheduler, input, tags }) {
-    tags ??= this.aob.tag.process({ module, scheduler })
+    tags ??= this.data.tag.process({ module, scheduler })
     if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
-    const item = await this.aob.dataitem({ tags })
+    const item = await this.data.dataitem({ tags })
     return await this.mu.post(item)
   }
 
@@ -68,8 +68,8 @@ class CWAO {
       }
       signer = new ArweaveSigner(this.query_wallet)
     }
-    let tags = this.aob.tag.message({ input, action, read_only })
-    const item = await this.aob.dataitem({ target: process, tags }, "", signer)
+    let tags = this.data.tag.message({ input, action, read_only })
+    const item = await this.data.dataitem({ target: process, tags }, "", signer)
     return await this.mu.post(item)
   }
 
