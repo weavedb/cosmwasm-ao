@@ -1,6 +1,7 @@
 let Arweave = require("arweave")
-const AOB = require("./aobundles")
 if (Arweave.default) Arweave = Arweave.default
+
+const AOB = require("./aobundles")
 const { ArweaveSigner, DataItem, bundleAndSignData } = require("arbundles")
 
 class CWAO {

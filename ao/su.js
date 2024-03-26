@@ -1,9 +1,6 @@
 const crypto = require("crypto")
 const { keys } = require("ramda")
-const { Bundle } = require("arbundles")
-const { parse } = require("./utils")
 const Base = require("./base")
-
 function genHash(prev, current) {
   return crypto
     .createHash("sha256")
@@ -51,7 +48,7 @@ class SU extends Base {
       const timestamp = Date.now()
       if (!valid) return this.bad_request(res)
       const { valid: tag_valid } = this.aob.tag.validate(item)
-      const m = parse(item.tags)
+      const m = this.aob.tag.parse(item.tags)
       const read_only = m.read_only === "True"
       const address = this.aob.owner(item)
       if (type === "Message") {
