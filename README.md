@@ -95,25 +95,27 @@ const cwao = new CWAO({ wallet })
 const module_binary = require("fs").readFileSync(module_binary_file_path)
 
 // deploy contract (module = CosmWasm contract binary)
-const module_txid = await cwao.deploy(module_binary)
+const module = await cwao.deploy(module_binary)
 
 // assign scheduler unit to wallet address
 await cwao.setSU({ url: "http://localhost:1986" })
 
 // get scheduler address for the process
-const scheduler_address = await cwao.arweave.wallets.jwkToAddress(wallet)
+const scheduler = await cwao.arweave.wallets.jwkToAddress(wallet)
 
 // instantiate contract
-const process = await cwao.instantiate({
-  module: module_txid,
-  scheduler: scheduler_address,
-  input: { num: 1 },
-})
+const process = await cwao.instantiate({ module,  scheduler, input: { num: 1 } })
 
 // execute contract
 await cwao.execute({ process: process.id, action: "Add", input: { num: 2 } })
 
 // query contract
-const result = await cwao.query({process: process.id, action: "Num", input: {}})
+const { num } = await cwao.query({process: process.id, action: "Num", input: {}})
 
+
+// a much simpler way 
+const cw = cwao.cw({ module, scheduler }) // get CW instance
+await cw.i({ num: 1 }) // instantiate
+await cw.e("Add", { num: 2 }) // execute
+const { num } = await cw.q("Num") // query
 ```
