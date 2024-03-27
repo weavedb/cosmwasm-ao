@@ -1,26 +1,6 @@
 const { expect } = require("chai")
-const WDB = require("../wdb")
 const { CWAO } = require("../../cwao-sdk")
-const { start } = require("../test-utils")
-const { readFileSync } = require("fs")
-const { resolve } = require("path")
-const { bech32 } = require("bech32")
-const base64url = require("base64url")
-
-function toBech32(arweaveAddress, prefix = "ao") {
-  const decodedBytes = base64url.toBuffer(arweaveAddress)
-  const words = bech32.toWords(decodedBytes)
-  const bech32Address = bech32.encode(prefix, words)
-  return bech32Address
-}
-
-const sleep = x =>
-  new Promise(res => {
-    setTimeout(() => res(), x)
-  })
-
-const getModule = async module_path =>
-  readFileSync(resolve(__dirname, "../../cosmwasm/", module_path))
+const { start, toBech32, getModule, sleep } = require("../test-utils")
 
 describe("WDB", function () {
   this.timeout(0)
@@ -47,7 +27,6 @@ describe("WDB", function () {
     const _binary = await getModule(
       "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
-
     const mod_id = await cwao.deploy(_binary)
     await cwao.setSU({ url: "http://localhost:1986" })
     const pr = await cwao.instantiate({

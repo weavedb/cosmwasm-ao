@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@terran-one/cosmwasm-vm-js": "^0.2.16"
+  }
+}
