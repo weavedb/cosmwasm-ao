@@ -1,0 +1,20 @@
+{
+  "name": "cwao-workspace",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "yarn compile && mocha",
+    "compile": "cd contracts && cargo wasm"
+  },
+  "dependencies": {
+    "arlocal": "^1.1.66",
+    "arweave": "^1.14.4",
+    "base64url": "^3.0.1",
+    "bech32": "^2.0.0",
+    "chai": "^4.3.10",
+    "cwao": "^0.3.3",
+    "cwao-units": "^0.0.1",
+    "mocha": "^10.2.0"
+  }
+}

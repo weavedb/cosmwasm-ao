@@ -1,6 +1,10 @@
+.weavedb
+cache
+scripts/.wallets
+scripts/.db
+packages
+!node/packages
 \*shell\*
-target/
-
 # Logs
 logs
 *.log

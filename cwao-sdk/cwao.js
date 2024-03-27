@@ -5,6 +5,7 @@ const { ArweaveSigner } = require("arbundles")
 const CU = require("./cu")
 const MU = require("./mu")
 const SU = require("./su")
+const CW = require("./cw")
 
 class CWAO {
   constructor({
@@ -29,7 +30,9 @@ class CWAO {
     this.mu = new MU({ url: mu })
     this.su = new SU({ url: su })
   }
-
+  cw({ process, module, scheduler }) {
+    return new CW({ cwao: this, process, module, scheduler })
+  }
   async deploy(mod, tags) {
     tags ??= this.data.tag.module({})
     const tx = await this.arweave.createTransaction({ data: mod })
