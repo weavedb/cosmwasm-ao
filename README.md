@@ -49,10 +49,28 @@ cargo build --target wasm32-unknown-unknown --release
 ### Sample Contract
 
 ```bash
-cd cosmwasm-ao/cosmwasm/simple
+cd cosmwasm-ao/cosmwasm/cw20
 cargo build --target wasm32-unknown-unknown --release
 ```
 The binary file to deploy will be at `target/wasm32-unknown-unknown/release/contract.wasm`.
+
+### Differences from Original CosmWasm
+
+CosmWasm on AO has a couple of pivotal differences from the original CosmWasm on CosmosSDK. This is to be compatible with the AO specification, which brings out the full advantage of the actor model for hyperparallelism and scalability.
+
+#### Arweave Addresses in Bech32 Format
+
+The AO network verifies message signatures by Arweave Addresses (RSA). CosmWasm on AO uses Bech32 format of Arweave address prefixed by `ao`.
+
+#### No Atomic `add_message` Failures
+
+In the original CosmWasm, you can call cross contract functions with `add_message` and atomically fail if the target contract execution fails. But this is not the case with AO since AO is pure actor model. Use `add_submessage` instead to achieve 2 way communications between processes.
+
+[IBC](https://cosmos.network/ibc/) on AO is also under development, which will enable cross-chain communications between AO processes and other blockchains.
+
+#### No Querier to Read Other Contracts
+
+For the same reason, `Querier` to read states from other contracts are disabled in CosmWasm on AO. This behaviour requires inefficient and blocking synchronous operations between multiple processes, and would be the biggest bottleneck to the hyperparallelism and hyper scalability of the AO network. We believe almost all the logic with `Querier` can be replaced with asynchronous messaging between processes using `add_submessage` and `IBC`.
 
 ## CosmWasm AO SDK
 
@@ -61,6 +79,9 @@ The binary file to deploy will be at `target/wasm32-unknown-unknown/release/cont
 ```bash
 yarn add cwao
 ```
+
+- [CWAO API Reference](./cwao-sdk)
+
 
 ### Using SDK in Node Script
 
