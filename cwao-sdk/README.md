@@ -65,6 +65,24 @@ Query a CosmWasm function. This will send out a read-only message.
 await cwao.query({ process, action, input })
 ```
 
+### `cw`
+
+CW provides a simpler interface for a CosmWasm contract by presetting the `process_id`.
+
+```javascript
+const cw = await cwao.cw({ module, scheduler })
+await cw.i(input) // instanciate, this will assign the resulting process_id
+await cw.e(action, input) // execute
+await cw.q(action, input) // query
+```
+If the contract/process is already instantiated, you can pass the `process_id`.
+
+```javascript
+const cw = await cwao.cw({ process })
+await cw.e(action, input)
+await cw.q(action, input)
+```
+
 ### MU
 
 To interact with a messenger unit, you could use it as a standalone `MU` instance or as part of `CWAO`.
