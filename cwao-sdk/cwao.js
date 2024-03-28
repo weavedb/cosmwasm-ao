@@ -52,7 +52,8 @@ class CWAO {
     tags ??= this.data.tag.process({ module, scheduler })
     if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
     const item = await this.data.dataitem({ tags })
-    return await this.mu.post(item)
+    const res = await this.mu.post(item)
+    return res
   }
 
   async execute({ process, action, input = {}, query = false }) {
