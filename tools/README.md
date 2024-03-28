@@ -53,5 +53,39 @@ describe("CWAO", function () {
   })
 })
 ```
+### Deploy Contract
 
+To deploy the contract, run Arweave testnet and AO units on your local machine first.
 
+```bash
+yarn start
+```
+3 wallets (mu / su / cu) were generated.
+
+Then, deploy the contract as an AO module. You can generate a new wallet with `--wallet`.
+
+```bash
+yarn deploy --wallet acc # returns MODULE_ID
+```
+
+Also, set up a scheduler address. Use `--wallet su`.
+
+```bash
+yarn setSU --wallet su # returns SCHEDULER_ADDRESS
+```
+
+Finally, instantiate the contract as an AO process.
+
+```bash
+yarn instantiate --wallet acc --module_id MODULE_ID --scheduler SCHEDULER_ADDRESS --input '{ "num": 3 }'
+```
+ 
+Now you got a `PROCESS_ID`.
+
+```javascript
+const { CWAO } = require("cwao")
+const wallet = ARWEAVE_WALLET_JWK
+const cw = new CWAO({ wallet }).cw({ process: PROCESS_ID })
+await cw.e("Add", { num: 1 })
+await cw.q("Num") // { num: 4 }
+```
