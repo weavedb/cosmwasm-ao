@@ -4,7 +4,7 @@
 
 ## Quick Start
 
-Make sure you have, NodeJS v18 or above and Rust/Cargo installed on your computer.
+Make sure you have, NodeJS v18 or above, Rust/Cargo, and `wasm32-unknown-unknown` installed on your computer.
 
 ### Install
 
