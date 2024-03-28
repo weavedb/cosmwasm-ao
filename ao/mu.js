@@ -44,7 +44,7 @@ class MU extends Base {
     } else if (tags.type === "Process") {
       url = await this.gql.getSU({ address: tags.scheduler })
     }
-    if (!url) return { error: true }
+    if (!url) return this.bad_request(res)
     let su_res = null
     try {
       su_res = await new SU({ url }).post(item)

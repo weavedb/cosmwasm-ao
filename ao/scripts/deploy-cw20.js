@@ -56,7 +56,7 @@ const main = async () => {
 
   const sch = await arweave.wallets.jwkToAddress(wallet)
   if (!minter) minter = sch
-  await cwao.addScheduler({ url: "http://localhost:1986" })
+  await cwao.setSU({ url: "http://localhost:1986" })
   const addr32 = toBech32(minter, "ao")
 
   const input = {
