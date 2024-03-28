@@ -1,7 +1,6 @@
-.weavedb
 cache
-scripts/.wallets
-scripts/.db
+.wallets
+.db
 packages
 !node/packages
 \*shell\*
