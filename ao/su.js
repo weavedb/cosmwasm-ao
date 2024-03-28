@@ -91,7 +91,6 @@ class SU extends Base {
         res.json({ id: tx.id, timestamp })
       }
     } catch (e) {
-      console.log(e)
       return this.bad_request(res)
     }
   }

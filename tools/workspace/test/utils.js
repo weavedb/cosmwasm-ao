@@ -36,27 +36,34 @@ const toAddr = async (wallet, arweave) => {
 }
 
 const start = async (
-  _arweave = {
+  network = {
     host: "localhost",
-    port: 1984,
+    port: 1994,
     protocol: "http",
   },
 ) => {
-  const arweave = Arweave.init(_arweave)
-  const arLocal = new ArLocal(1984, false)
+  const arweave = Arweave.init(network)
+  const arLocal = new ArLocal(network.port, false)
   await arLocal.start()
   let wallets = {}
   wallets.mu = await genWallet(arweave)
   wallets.su = await genWallet(arweave)
   wallets.cu = await genWallet(arweave)
   wallets.acc = await genWallet(arweave)
-  const mu = new MU({ wallet: wallets.mu.jwk })
-  const su = new SU({ wallet: wallets.su.jwk })
-  const cu = new CU({ wallet: wallets.cu.jwk })
-  const scheduler = new CWAO({ wallet: wallets.su.jwk })
-  await scheduler.setSU({ url: "http://localhost:1986" })
+  const base = {
+    mu: "http://localhost:1995",
+    su: "http://localhost:1996",
+    cu: "http://localhost:1997",
+    arweave: network,
+    graphql: `http://localhost:${network.port}/graphql`,
+  }
+  const mu = new MU({ wallet: wallets.mu.jwk, port: 1995, ...base })
+  const su = new SU({ wallet: wallets.su.jwk, port: 1996, ...base })
+  const cu = new CU({ wallet: wallets.cu.jwk, port: 1997, ...base })
+  const scheduler = new CWAO({ wallet: wallets.su.jwk, ...base })
+  await scheduler.setSU({ url: base.su })
   const module = await scheduler.deploy(await getModule())
-  const cwao = new CWAO({ wallet: wallets.acc.jwk })
+  const cwao = new CWAO({ wallet: wallets.acc.jwk, ...base })
   const cw = cwao.cw({ module, scheduler: wallets.su.addr })
   const stop = async () => {
     await arLocal.stop()
@@ -65,7 +72,7 @@ const start = async (
     cu.stop()
   }
 
-  return { mu, su, cu, arweave, wallets, arLocal, cwao, module, stop, cw }
+  return { mu, su, cu, arweave, wallets, arLocal, cwao, module, stop, cw, base }
 }
 
 module.exports = { start, genWallet, toBech32, wait, getModule, toAddr }

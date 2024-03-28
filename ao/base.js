@@ -12,10 +12,13 @@ class Base {
     wallet,
     protocol,
     variant,
-    mu_url,
-    su_url,
-    cu_url,
+    mu,
+    su,
+    cu,
   }) {
+    this.mu = mu
+    this.cu = cu
+    this.su = su
     this.graphql = graphql
     this.type = type
     this.port = port
@@ -31,7 +34,7 @@ class Base {
       protocol,
       variant,
       wallet: this.wallet,
-      network: this.network,
+      arweave: this.network,
     })
   }
 

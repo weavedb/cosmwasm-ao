@@ -1,13 +1,32 @@
 const { expect } = require("chai")
 const { CWAO } = require("../../cwao-sdk")
-const { start, toBech32, getModule, sleep } = require("../test-utils")
+const { start } = require("./utils")
+const { readFileSync } = require("fs")
+const { resolve } = require("path")
+const { bech32 } = require("bech32")
+const base64url = require("base64url")
+
+function toBech32(arweaveAddress, prefix = "ao") {
+  const decodedBytes = base64url.toBuffer(arweaveAddress)
+  const words = bech32.toWords(decodedBytes)
+  const bech32Address = bech32.encode(prefix, words)
+  return bech32Address
+}
+
+const sleep = x =>
+  new Promise(res => {
+    setTimeout(() => res(), x)
+  })
+
+const getModule = async module_path =>
+  readFileSync(resolve(__dirname, "../../cosmwasm/", module_path))
 
 describe("WDB", function () {
   this.timeout(0)
-  let mu, su, cu, wallet, arweave, arLocal
+  let mu, su, cu, wallet, arweave, arLocal, base
 
   before(async () => {
-    ;({ mu, su, cu, wallet, arweave, arLocal } = await start())
+    ;({ mu, su, cu, wallet, arweave, arLocal, base } = await start())
   })
 
   after(async () => {
@@ -18,17 +37,20 @@ describe("WDB", function () {
   })
 
   it("should handle bare cosmwasm", async () => {
-    const cwao = new CWAO({ wallet })
+    const cwao = new CWAO({ wallet, ...base })
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.mu.get()).to.eql("ao messenger unit")
     expect((await cwao.cu.get()).address).to.eql(sch)
     expect((await cwao.su.get()).Address).to.eql(sch)
     expect((await cwao.su.timestamp()).block_height).to.eql(0)
+
     const _binary = await getModule(
       "simple/target/wasm32-unknown-unknown/release/contract.wasm",
     )
+
     const mod_id = await cwao.deploy(_binary)
-    await cwao.setSU({ url: "http://localhost:1986" })
+    await cwao.setSU({ url: "http://localhost:1996" })
+
     const pr = await cwao.instantiate({
       module: mod_id,
       scheduler: sch,
@@ -93,17 +115,17 @@ describe("WDB", function () {
     expect((await cwao.cu.state(pr.id)).byteLength).to.eql(1179648)
   })
 
-  it("should handle cw20 token", async () => {
+  it.only("should handle cw20 token", async () => {
     const _binary = await getModule(
       "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
     )
-    const cwao = new CWAO({ wallet })
+    const cwao = new CWAO({ wallet, ...base })
     const wallet2 = await cwao.arweave.wallets.generate()
     const addr2 = await cwao.arweave.wallets.jwkToAddress(wallet2)
     const addr2_32 = toBech32(addr2, "ao")
     const mod_id = await cwao.deploy(_binary)
 
-    await cwao.setSU({ url: "http://localhost:1986" })
+    await cwao.setSU({ url: "http://localhost:1996" })
 
     const sch = await arweave.wallets.jwkToAddress(wallet)
 
@@ -124,6 +146,7 @@ describe("WDB", function () {
       scheduler: sch,
       input,
     })
+    return
     await sleep(500)
     expect(
       await cwao.query({

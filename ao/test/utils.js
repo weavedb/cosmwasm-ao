@@ -1,8 +1,6 @@
 const ArLocal = require("arlocal").default
 const Arweave = require("arweave")
-const MU = require("./mu")
-const SU = require("./su")
-const CU = require("./cu")
+const { MU, SU, CU } = require("../")
 const { readFileSync } = require("fs")
 const { bech32 } = require("bech32")
 const { resolve } = require("path")
@@ -24,14 +22,14 @@ const getModule = async module_path =>
   readFileSync(resolve(__dirname, "../../cosmwasm/", module_path))
 
 const start = async (
-  _arweave = {
+  network = {
     host: "localhost",
-    port: 1984,
+    port: 1994,
     protocol: "http",
   },
 ) => {
-  const arweave = Arweave.init(_arweave)
-  const arLocal = new ArLocal(1984, false)
+  const arweave = Arweave.init(network)
+  const arLocal = new ArLocal(1994, false)
   await arLocal.start()
 
   const wallet = await arweave.wallets.generate()
@@ -39,14 +37,17 @@ const start = async (
   await arweave.api.get(`mint/${addr}/10000000000000000`)
   console.log(`[Wallet] ${addr}`)
 
-  const wallet2 = await arweave.wallets.generate()
-  const addr2 = await arweave.wallets.jwkToAddress(wallet2)
-  await arweave.api.get(`mint/${addr2}/10000000000000000`)
-
-  const mu = new MU({ wallet: wallet2 })
-  const su = new SU({ wallet })
-  const cu = new CU({ wallet })
-  return { mu, su, cu, arweave, wallet, arLocal }
+  const base = {
+    mu: "http://localhost:1995",
+    su: "http://localhost:1996",
+    cu: "http://localhost:1997",
+    arweave: network,
+    graphql: "http://localhost:1994/graphql",
+  }
+  const mu = new MU({ wallet, port: 1995, ...base })
+  const su = new SU({ wallet, port: 1996, ...base })
+  const cu = new CU({ wallet, port: 1997, ...base })
+  return { mu, su, cu, arweave, wallet, arLocal, base }
 }
 
 module.exports = { start, toBech32, sleep, getModule }
