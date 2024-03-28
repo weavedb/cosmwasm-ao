@@ -1,6 +1,6 @@
 {
   "name": "cwao-tools",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "index.js",
   "node": "^20",
   "bin": {
@@ -8,6 +8,8 @@
   },
   "license": "MIT",
   "dependencies": {
+    "cwao": "^0.3.4",
+    "cwao-units": "^0.0.2",
     "ramda": "^0.29.1",
     "yargs": "^17.7.2"
   }

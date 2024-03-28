@@ -4,7 +4,6 @@ const Arweave = require("arweave")
 const MU = require("../mu")
 const SU = require("../su")
 const CU = require("../cu")
-
 const start = async ({
   network = {
     host: "localhost",
