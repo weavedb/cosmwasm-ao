@@ -24,7 +24,7 @@ class CWAO {
     this.arweave = new Arweave(arweave)
     this.data = new Data({
       wallet: this.wallet,
-      network: this.network,
+      arweave: this.network,
     })
     this.cu = new CU({ url: cu })
     this.mu = new MU({ url: mu })
