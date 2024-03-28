@@ -23,18 +23,10 @@ const getModule = async module_path =>
 
 describe("WDB", function () {
   this.timeout(0)
-  let mu, su, cu, wallet, arweave, arLocal, base
+  let stop, wallet, arweave, base
 
-  before(async () => {
-    ;({ mu, su, cu, wallet, arweave, arLocal, base } = await start())
-  })
-
-  after(async () => {
-    await arLocal.stop()
-    mu.stop()
-    su.stop()
-    cu.stop()
-  })
+  before(async () => ({ stop, wallet, arweave, base } = await start()))
+  after(async () => await stop())
 
   it("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet, ...base })
@@ -49,7 +41,7 @@ describe("WDB", function () {
     )
 
     const mod_id = await cwao.deploy(_binary)
-    await cwao.setSU({ url: "http://localhost:1996" })
+    await cwao.setSU({ url: base.su })
 
     const pr = await cwao.instantiate({
       module: mod_id,
@@ -125,7 +117,7 @@ describe("WDB", function () {
     const addr2_32 = toBech32(addr2, "ao")
     const mod_id = await cwao.deploy(_binary)
 
-    await cwao.setSU({ url: "http://localhost:1996" })
+    await cwao.setSU({ url: base.su })
 
     const sch = await arweave.wallets.jwkToAddress(wallet)
 

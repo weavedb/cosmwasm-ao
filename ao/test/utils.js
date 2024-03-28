@@ -47,7 +47,14 @@ const start = async (
   const mu = new MU({ wallet, port: 1995, ...base })
   const su = new SU({ wallet, port: 1996, ...base })
   const cu = new CU({ wallet, port: 1997, ...base })
-  return { mu, su, cu, arweave, wallet, arLocal, base }
+  const stop = async () => {
+    await arLocal.stop()
+    mu.stop()
+    su.stop()
+    cu.stop()
+  }
+
+  return { mu, su, cu, arweave, wallet, arLocal, base, stop }
 }
 
 module.exports = { start, toBech32, sleep, getModule }

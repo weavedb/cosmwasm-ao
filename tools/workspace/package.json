@@ -5,7 +5,9 @@
   "license": "MIT",
   "scripts": {
     "test": "yarn compile && mocha",
-    "compile": "cd contracts && cargo wasm"
+    "compile": "cd contracts && cargo wasm",
+    "start": "node scripts/start.js",
+    "keygen": "node scripts/keygen.js"
   },
   "dependencies": {
     "arlocal": "^1.1.66",
