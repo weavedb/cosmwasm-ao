@@ -22,7 +22,7 @@ class CU extends Base {
     this.subscribe = {}
     this.results = {}
     this.vms = {}
-    this.su = {}
+    this.sus = {}
     this.msgs = {}
     this.init()
   }
@@ -47,10 +47,15 @@ class CU extends Base {
   }
 
   async instantiate(pid) {
-    // refresh if more than expiry
-    this.su[pid] ??= await this.gql.getSU({ process: pid })
-    if (!this.su[pid]) return
-    this.msgs[pid] = await new SU({ url: this.su[pid] }).processes(pid)
+    if (
+      !this.sus[pid] ||
+      this.sus[pid].ttl + this.sus[pid].checked >= Date.now()
+    ) {
+      this.sus[pid] ??= await this.gql.getSU({ process: pid })
+      this.sus[pid].checked = Date.now()
+    }
+    if (!this.sus[pid]) return
+    this.msgs[pid] = await new SU({ url: this.sus[pid].url }).processes(pid)
     const process = this.data.tag.parse(this.msgs[pid].tags)
     this.vms[pid] = await this.getModule(process.module, pid)
     const input = JSON.parse(process.input)
@@ -69,7 +74,7 @@ class CU extends Base {
     let subscribe = this.subscribe[pid]
     this.subscribe[pid] = []
     this.ongoing[pid] = true
-    if (typeof this.vms[pid] === "undefined") await this.instantiate(pid)
+    if (!this.vms[pid]) await this.instantiate(pid)
     await this.execute(pid)
     this.ongoing[pid] = false
     for (const v of subscribe) v()
@@ -84,8 +89,8 @@ class CU extends Base {
   }
 
   async execute(pid) {
-    if (typeof this.su[pid] === "undefined") return
-    const pmap = (await new SU({ url: this.su[pid] }).process(pid)).edges
+    if (!this.sus[pid]) return
+    const pmap = (await new SU({ url: this.sus[pid].url }).process(pid)).edges
     for (const v of pmap) {
       const id = v.node.message.id
       if (this.results[pid][id]) continue

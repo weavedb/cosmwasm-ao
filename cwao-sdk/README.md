@@ -320,5 +320,5 @@ const tx = await gql.getTx(id, node_query)
 To get a SU URL, either path `scheduler_address` or `process_id`.
 
 ```javascript
-const url = await gql.getSU({ address, process })
+const { url, ttl } = await gql.getSU({ address, process })
 ```

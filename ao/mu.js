@@ -26,6 +26,7 @@ class MU extends Base {
       protocol,
       variant,
     })
+    this.sus = {}
     this.init()
   }
 
@@ -39,10 +40,20 @@ class MU extends Base {
     let error = null
     const tags = this.data.tag.parse(item.tags)
     let url = null
+    let ttl = null
     if (tags.type === "Message") {
-      url = await this.gql.getSU({ process: item.target })
+      if (
+        this.sus[item.target] &&
+        this.sus[item.target].ttl + this.sus[item.target].checked < Date.now()
+      ) {
+        url = this.sus[item.target].url
+      } else {
+        this.sus[item.target] = await this.gql.getSU({ process: item.target })
+        this.sus[item.target].checked = Date.now()
+        url = this.sus[item.target].url
+      }
     } else if (tags.type === "Process") {
-      url = await this.gql.getSU({ address: tags.scheduler })
+      ;({ url, ttl } = await this.gql.getSU({ address: tags.scheduler }))
     }
     if (!url) return this.bad_request(res)
     let su_res = null
