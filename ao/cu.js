@@ -157,6 +157,7 @@ class CU extends Base {
       if (tags.read_only === "True") {
         resp.Output = JSON.parse(atob(qres.ok))
       } else {
+        resp.Output = qres
         for (const v of qres.ok.attributes) {
           if (v.key === "action" && v.value === "perform_action") {
             if (this.msgs[mid]) {
@@ -167,7 +168,9 @@ class CU extends Base {
               ) {
                 const input = {
                   id: Number(tags.reply_id),
-                  result: { ok: { events: [], data: qres.ok.data } },
+                  result: {
+                    ok: { data: qres.ok.data, events: qres.ok.events },
+                  },
                 }
                 let _tags = this.data.tag.message({ action: "reply", input }, [
                   { name: "From-Process", value: pid },

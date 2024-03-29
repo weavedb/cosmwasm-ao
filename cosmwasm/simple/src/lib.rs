@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    from_binary, entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsgResult, Reply,SubMsgExecutionResponse, 
+    from_json, entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, SubMsgResult, Reply,SubMsgResponse, 
 };
 use serde::Deserialize;
 use msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -63,13 +63,13 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         },
         2 => {
             match msg.result {
-                SubMsgResult::Ok(SubMsgExecutionResponse { data, events }) => {
+                SubMsgResult::Ok(SubMsgResponse { data, events }) => {
 		    let result: Result<SubErr, StdError> = data.map_or_else(
 			|| Err(StdError::generic_err("no data returned")),
-			|binary_data| from_binary(&binary_data),
+			|binary_data| from_json(&binary_data),
 		    );
 		    NUM.update(deps.storage, move |num2| -> StdResult<_> {
-			Ok(num2 + result.unwrap().num)
+			Ok(num2 + result.unwrap().num + events[0].attributes[0].value.parse::<u8>().unwrap())
 		    })?;
 		    Ok(Response::new().add_attribute("action", "handle_reply").add_attribute("result", "success"))
                 },

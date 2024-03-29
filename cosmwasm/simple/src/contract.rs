@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn, StdError
+    to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn, StdError
 };
 use serde::{Serialize, Deserialize};
 use crate::state::NUM;
@@ -60,7 +60,7 @@ mod exec {
         NUM.update(deps.storage, move |num2| -> StdResult<_> {
             Ok(num + num2)
         })?;
-        Ok(Response::new().add_attribute("action", "perform_action"))
+        Ok(Response::new().add_attribute("action", "perform_action").add_events(vec![Event::new("added").add_attribute("num", num.to_string())]))
     }
     
     pub fn add2(_deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
@@ -125,7 +125,11 @@ mod exec {
             Ok(num + num2)
         })?;
 	let binary_data = to_json_binary(&sub_err)?;
-        Ok(Response::new().add_attribute("action", "perform_action").set_data(binary_data))
+        Ok(
+	    Response::new().add_attribute("action", "perform_action")
+		.set_data(binary_data)
+		.add_events(vec![Event::new("added").add_attribute("num", num.to_string())])
+	)
     }
     
 }

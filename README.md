@@ -4,7 +4,7 @@ CosmWasm AO is a [CosmWasm](https://cosmwasm.com/)-based smartcontract network o
 
 ## Packages
 
-CosmWasm AO Development is an early state. Everything is subject to changes.
+CosmWasm AO Development is in a very early state. Everything is subject to changes.
 
 We will launch a public testnet on AO in the coming months.
 

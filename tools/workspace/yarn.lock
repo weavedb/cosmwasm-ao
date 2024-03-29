@@ -1975,10 +1975,10 @@ cssfilter@0.0.10:
   resolved "https://registry.yarnpkg.com/cssfilter/-/cssfilter-0.0.10.tgz#c6d2672632a2e5c83e013e6864a42ce8defd20ae"
   integrity sha512-FAaLDaplstoRsDR8XGYH51znUN0UY7nMc6Z9/fvE8EXGwvJE9hu7W2vHwx1+bd6gCYnln9nLbzxFTrcO9YQDZw==
 
-cwao-units@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/cwao-units/-/cwao-units-0.2.0.tgz#ea36e647c25c547be77cbc78bf0f3056512478ab"
-  integrity sha512-luiiYiXmvzGqXSzpCBTszx4+F4UvvO7eSIJ33fjGwS3vL3sGll6vmkGsylAL3IZS1Qwwmt0Elp6Q3Q6Oj0S+fA==
+cwao-units@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/cwao-units/-/cwao-units-0.2.1.tgz#6951353cf54d2c6303982338c21e1e0407cbdc7c"
+  integrity sha512-iBEOz0ROXqGmR7FS+xnHZlOQFu8tHgyRGKX/QnlFANgaE9+25Y9WTOwWVVd5RnGiZ0HYbGPcuwFRUoaEfBiv3A==
   dependencies:
     "@terran-one/cosmwasm-vm-js" "^0.2.16"
     arbundles "^0.11.0"
