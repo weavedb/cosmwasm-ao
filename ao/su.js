@@ -82,7 +82,6 @@ class SU extends Base {
           message: item.id,
           height: (await this.arweave.blocks.getCurrent()).height,
         })
-        console.log(tags)
         const assignment = await this.data.dataitem({ tags })
         await this.data.send({ dataitems: [item, assignment] })
         res.status(201)

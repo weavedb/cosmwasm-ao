@@ -1,25 +1,10 @@
 const { expect } = require("chai")
 const { CWAO } = require("../../cwao-sdk")
-const { start } = require("./utils")
+const { start, sleep, toBech32, getModule } = require("./utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
 const { bech32 } = require("bech32")
 const base64url = require("base64url")
-
-function toBech32(arweaveAddress, prefix = "ao") {
-  const decodedBytes = base64url.toBuffer(arweaveAddress)
-  const words = bech32.toWords(decodedBytes)
-  const bech32Address = bech32.encode(prefix, words)
-  return bech32Address
-}
-
-const sleep = x =>
-  new Promise(res => {
-    setTimeout(() => res(), x)
-  })
-
-const getModule = async module_path =>
-  readFileSync(resolve(__dirname, "../../cosmwasm/", module_path))
 
 describe("WDB", function () {
   this.timeout(0)
@@ -56,16 +41,15 @@ describe("WDB", function () {
     expect((await cwao.su.get()).Processes).to.eql([pr.id, pr2.id].sort())
     await cwao.execute({ process: pr.id, action: "Add", input: { num: 1 } })
     await cwao.execute({ process: pr2.id, action: "Add", input: { num: 2 } })
-
     await cwao.execute({
       process: pr.id,
       action: "Add2",
-      input: { num: 3, addr: pr2.id },
+      input: { num: 3, addr: toBech32(pr2.id, "ao") },
     })
     await cwao.execute({
       process: pr.id,
       action: "Add3",
-      input: { num: 1, addr: pr2.id },
+      input: { num: 1, addr: toBech32(pr2.id, "ao") },
     })
     expect(
       await cwao.query({ process: pr.id, action: "Num", input: {} }),
@@ -82,7 +66,7 @@ describe("WDB", function () {
     await cwao.execute({
       process: pr.id,
       action: "Add4",
-      input: { num: 1, addr: pr2.id },
+      input: { num: 1, addr: toBech32(pr2.id, "ao") },
     })
     await sleep(500)
     expect(
@@ -92,7 +76,7 @@ describe("WDB", function () {
     await cwao.execute({
       process: pr.id,
       action: "Add4",
-      input: { num: 3, addr: pr2.id },
+      input: { num: 3, addr: toBech32(pr2.id, "ao") },
     })
     await sleep(500)
 

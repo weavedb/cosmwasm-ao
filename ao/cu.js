@@ -1,7 +1,7 @@
 const express = require("express")
 const Arweave = require("arweave")
 const Base = require("./base")
-const { VM } = require("./cosmwasm")
+const { VM, fromBech32, toBech32 } = require("./cosmwasm")
 const { SU } = require("cwao")
 
 class CU extends Base {
@@ -40,9 +40,7 @@ class CU extends Base {
   }
 
   async getModule(txid, pr_id) {
-    const wasm = await this.arweave.transactions.getData(txid, {
-      decode: true,
-    })
+    const wasm = await this.arweave.transactions.getData(txid, { decode: true })
     const vm = new VM({ id: "ao", addr: pr_id })
     await vm.getVM(wasm)
     return vm
@@ -74,7 +72,7 @@ class CU extends Base {
     if (typeof this.vms[pid] === "undefined") await this.instantiate(pid)
     await this.execute(pid)
     this.ongoing[pid] = false
-    for (let v of subscribe) v()
+    for (const v of subscribe) v()
     if (this.subscribe[pid].length > 0) await this._eval(pid)
   }
 
@@ -88,7 +86,7 @@ class CU extends Base {
   async execute(pid) {
     if (typeof this.su[pid] === "undefined") return
     const pmap = (await new SU({ url: this.su[pid] }).process(pid)).edges
-    for (let v of pmap) {
+    for (const v of pmap) {
       const id = v.node.message.id
       if (this.results[pid][id]) continue
       try {
@@ -144,14 +142,17 @@ class CU extends Base {
         let _tags = this.data.tag.message({ action: "reply", input }, [
           { name: "From-Process", value: pid },
         ])
-        resp.Messages.push({ Target: tags.from_process, Tags: _tags })
+        resp.Messages.push({
+          Target: tags.from_process,
+          Tags: _tags,
+        })
       }
       resp.Error = qres.error
     } else {
       if (tags.read_only === "True") {
         resp.Output = JSON.parse(atob(qres.ok))
       } else {
-        for (let v of qres.ok.attributes) {
+        for (const v of qres.ok.attributes) {
           if (v.key === "action" && v.value === "perform_action") {
             if (this.msgs[mid]) {
               if (
@@ -171,7 +172,7 @@ class CU extends Base {
             }
           }
         }
-        for (let v of qres.ok.messages) {
+        for (const v of qres.ok.messages) {
           const { contract_addr, funds, msg } = v.msg.wasm.execute
           const { id, reply_on } = v
           const _msg = JSON.parse(atob(msg))
@@ -189,7 +190,7 @@ class CU extends Base {
               custom,
             )
             resp.Messages.push({
-              Target: contract_addr,
+              Target: fromBech32(contract_addr),
               Tags: tags,
             })
           }
