@@ -3,15 +3,13 @@ const { resolve } = require("path")
 const Arweave = require("arweave")
 
 const mkdirs = async dirs => {
-  for (let v of dirs) {
-    if (!existsSync(v)) mkdirSync(v)
-  }
+  for (let v of dirs) if (!existsSync(v)) mkdirSync(v)
 }
 
-const keygen = async (name, dir) => {
+const keygen = async (name, dir, arweave) => {
   const keyfile = resolve(dir, `${name}.json`)
   let wallet = null
-  const arweave = Arweave.init({
+  arweave ??= Arweave.init({
     host: "localhost",
     port: 1984,
     protocol: "http",

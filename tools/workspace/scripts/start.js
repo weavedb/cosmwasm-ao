@@ -5,8 +5,8 @@ const { MU, SU, CU } = require("cwao-units")
 const { mkdirs, keygen } = require("./utils")
 
 const dir = resolve(__dirname, "../.cwao")
-const dir_ac = resolve(__dirname, "../.cwao/accounts")
-const dirs = [dir, dir_ac]
+const dir_acc = resolve(__dirname, "../.cwao/accounts")
+const dirs = [dir, dir_acc]
 
 const start = async ({
   network = {
@@ -24,14 +24,14 @@ const start = async ({
   const wallet_names = ["mu", "su", "cu"]
   let wallets = {}
   for (const v of wallet_names) {
-    wallets[v] = await keygen(v, dir)
+    wallets[v] = await keygen(v, dir, arweave)
     const addr = await arweave.wallets.jwkToAddress(wallets[v])
     await arweave.api.get(`mint/${addr}/10000000000000000`)
   }
 
-  const mu = new MU({ wallet: wallets.mu })
-  const su = new SU({ wallet: wallets.su })
-  const cu = new CU({ wallet: wallets.cu })
+  const mu = new MU({ wallet: wallets.mu, arweave: network })
+  const su = new SU({ wallet: wallets.su, arweave: network })
+  const cu = new CU({ wallet: wallets.cu, arweave: network })
   return { mu, su, cu, arweave, wallets, arLocal }
 }
 
