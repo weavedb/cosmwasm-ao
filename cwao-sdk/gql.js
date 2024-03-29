@@ -43,6 +43,7 @@ module.exports = class GQL {
 
   async getSUByAddress(addr) {
     let url = null
+    let ttl = null
     try {
       const node = `{ id owner { address } tags { name value } }`
       const su = (
@@ -58,14 +59,16 @@ module.exports = class GQL {
       ).data.transactions.edges
       for (let v of su) {
         if (v.node.owner.address === addr) {
-          url = parseTags(v.node.tags).url.replace(/\/$/, "")
+          const tags = parseTags(v.node.tags)
+          url = tags.url.replace(/\/$/, "")
+          ttl = +tags.ttl
           break
         }
       }
     } catch (e) {
       console.log(e)
     }
-    return url
+    return { ttl, url }
   }
 
   async getSU({ process, address }) {

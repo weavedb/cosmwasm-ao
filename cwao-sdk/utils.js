@@ -14,6 +14,7 @@ function parseTags(tags) {
     "From-Process": "from_process",
     "From-Module": "from_module",
     "Read-Only": "read_only",
+    "Time-To-Live": "ttl",
   }
   for (let v of tags) {
     if (tmap[v.name] && typeof m[tmap[v.name]] === "undefined") {
