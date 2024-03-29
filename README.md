@@ -2,6 +2,18 @@
 
 CosmWasm AO is a [CosmWasm](https://cosmwasm.com/)-based smartcontract network on [AO](https://cookbook_ao.g8way.io/).
 
+## Packages
+
+CosmWasm AO Development is an early state. Everything is subject to changes.
+
+We will launch a public testnet on AO in the coming months.
+
+| Package | Usage  | |
+|---|---|---|
+| [cwao](./cwao-sdk) | CosmWasm AO SDK | [![npm version](https://badge.fury.io/js/cwao.svg)](https://badge.fury.io/js/cwao) |
+| [cwao-units](./ao) | Running AO compatible Units (MU / SU / CU) | [![npm version](https://badge.fury.io/js/cwao-units.svg)](https://badge.fury.io/js/cwao-units) |
+| [cwao-tools](./tools) | Contract Testing Tools | [![npm version](https://badge.fury.io/js/cwao-units.svg)](https://badge.fury.io/js/cwao-units) |
+
 ## AO
 
 AO is a hyper parallel computation protocol on top of [Arweave](https://arweave.org/). It runs any number of Wasm-based smart contract processes in parallel with [actor model](https://en.wikipedia.org/wiki/Actor_model) messaging mechanism.
@@ -123,9 +135,4 @@ const { num } = await cw.q("Num") // query
 
 - [Quick Start](./tools)
 
-### Packages
-
-- [cwao](./cwao-sdk)
-- [cwao-units](./ao)
-- [cwao-tools](./tools)
 
