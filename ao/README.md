@@ -80,16 +80,15 @@ const start = async () => {
 
   await mkdirs([
     resolve(__dirname, "../.cwao"),
-	resolve(__dirname, "../.cwao/accounts")
+    resolve(__dirname, "../.cwao/accounts")
   ])
   
   const arweave = Arweave.init({ host: "localhost", port: 1984, protocol: "http" })
   const arLocal = new ArLocal(1984, false, resolve(__dirname, "../.cwao/db"), true)
   await arLocal.start()
   
-  const wallet_names = ["mu", "su", "cu"]
   let wallets = {}
-  for (const v of wallet_names) {
+  for (const v of ["mu", "su", "cu"]) {
     wallets[v] = await keygen(v, dir)
     const addr = await arweave.wallets.jwkToAddress(wallets[v])
     await arweave.api.get(`mint/${addr}/10000000000000000`)
