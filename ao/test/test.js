@@ -107,7 +107,7 @@ describe("WDB", function () {
     expect((await cwao.cu.state(pr.id)).byteLength).to.eql(1179648)
   })
 
-  it.only("should handle cw20 token", async () => {
+  it("should handle cw20 token", async () => {
     const _binary = await getModule(
       "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
     )

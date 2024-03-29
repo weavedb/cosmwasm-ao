@@ -57,7 +57,10 @@ class Tag {
     if (read_only) tags.push({ name: "Read-Only", value: "True" })
     return concat(tags, custom)
   }
-  assignment({ epoch, nonce, hash, height, process, timestamp }, custom = []) {
+  assignment(
+    { epoch, nonce, hash, height, process, timestamp, message },
+    custom = [],
+  ) {
     let tags = [
       ...this.base("Assignment"),
       { name: "Process", value: process },
@@ -70,6 +73,7 @@ class Tag {
         value: Number(height).toString(),
       },
     ]
+    if (message) tags.push({ name: "Message", value: message })
     return concat(tags, custom)
   }
   getType(tags) {
