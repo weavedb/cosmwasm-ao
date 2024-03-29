@@ -6,6 +6,14 @@ const { bech32 } = require("bech32")
 const { resolve } = require("path")
 const base64url = require("base64url")
 
+function fromBech32(bech32Address, _prefix = "ao") {
+  const { prefix, words } = bech32.decode(bech32Address)
+  if (prefix !== _prefix) throw new Error("Invalid prefix")
+  const decodedBytes = bech32.fromWords(words)
+  const arweaveAddress = base64url.encode(decodedBytes)
+  return arweaveAddress
+}
+
 function toBech32(arweaveAddress, prefix = "ao") {
   const decodedBytes = base64url.toBuffer(arweaveAddress)
   const words = bech32.toWords(decodedBytes)
@@ -57,4 +65,4 @@ const start = async (
   return { mu, su, cu, arweave, wallet, arLocal, base, stop }
 }
 
-module.exports = { start, toBech32, sleep, getModule }
+module.exports = { start, toBech32, sleep, getModule, fromBech32 }

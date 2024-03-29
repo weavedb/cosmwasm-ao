@@ -61,7 +61,7 @@ class MU extends Base {
           clearTimeout(to)
           if (res) res.json({ id: item.id })
           if (json.Error) console.log(json.Error)
-          for (let v of json.Messages ?? []) {
+          for (const v of json.Messages ?? []) {
             const _id = await this.send(
               await this.data.dataitem({ target: v.Target, tags: v.Tags }),
             )
