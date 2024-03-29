@@ -1,6 +1,6 @@
 {
   "name": "cwao-units",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -15,7 +15,7 @@
     "base64url": "^3.0.1",
     "bech32": "^2.0.0",
     "cors": "^2.8.5",
-    "cwao": "^0.3.2",
+    "cwao": "^0.3.5",
     "express": "^4.18.2",
     "ramda": "^0.29.1"
   },
