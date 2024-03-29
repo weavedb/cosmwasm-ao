@@ -119,3 +119,13 @@ await cw.i({ num: 1 }) // instantiate
 await cw.e("Add", { num: 2 }) // execute
 const { num } = await cw.q("Num") // query
 ```
+## Testing Contracts
+
+- [Quick Start](./tools)
+
+### Packages
+
+- [cwao](./cwao-sdk)
+- [cwao-units](./ao)
+- [cwao-tools](./tools)
+
