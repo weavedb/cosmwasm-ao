@@ -48,18 +48,26 @@ class MU extends Base {
       ) {
         url = this.sus[item.target].url
       } else {
-        this.sus[item.target] = await this.gql.getSU({ process: item.target })
-        this.sus[item.target].checked = Date.now()
-        url = this.sus[item.target].url
+        let _su = await this.gql.getSU({ process: item.target })
+        if (_su) {
+          this.sus[item.target] = _su
+          this.sus[item.target].checked = Date.now()
+          url = this.sus[item.target].url
+        }
       }
     } else if (tags.type === "Process") {
-      ;({ url, ttl } = await this.gql.getSU({ address: tags.scheduler }))
+      let _su = await this.gql.getSU({ address: tags.scheduler })
+      if (_su) {
+        ;({ url, ttl } = _su)
+      }
     }
     if (!url) return this.bad_request(res)
     let su_res = null
     try {
       su_res = await new SU({ url }).post(item)
-    } catch (e) {}
+    } catch (e) {
+      console.log(e)
+    }
     if (!su_res?.id) return this.bad_request(res)
     const start = Date.now()
     if (tags.type === "Process") {
@@ -104,7 +112,10 @@ class MU extends Base {
     if (_item) {
       try {
         await this.send(_item, res)
-      } catch (e) {}
+      } catch (e) {
+        console.log(e)
+        return this.bad_request(res)
+      }
     }
   }
 }

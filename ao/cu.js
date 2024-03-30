@@ -55,29 +55,46 @@ class CU extends Base {
       this.sus[pid].checked = Date.now()
     }
     if (!this.sus[pid]) return
-    this.msgs[pid] = await new SU({ url: this.sus[pid].url }).processes(pid)
-    const process = this.data.tag.parse(this.msgs[pid].tags)
-    this.vms[pid] = await this.getModule(process.module, pid)
-    const input = JSON.parse(process.input)
-    this.results[pid] ??= {}
-    let result = null
     try {
-      result = this.vms[pid].instantiate(this.msgs[pid].owner.address, input)
-      this.results[pid][pid] = result.json
+      const res = await new SU({ url: this.sus[pid].url }).processes(pid)
+      if (res.error) return { error: true }
+      this.msgs[pid] = res
+      const process = this.data.tag.parse(this.msgs[pid].tags)
+      this.vms[pid] = await this.getModule(process.module, pid)
+      const input = JSON.parse(process.input)
+      this.results[pid] ??= {}
+      let result = null
+      try {
+        result = this.vms[pid].instantiate(this.msgs[pid].owner.address, input)
+        this.results[pid][pid] = result.json
+      } catch (e) {
+        console.log(e)
+      }
+      return result.json
     } catch (e) {
       console.log(e)
+      return { error: true }
     }
-    return result.json
   }
 
   async _eval(pid) {
     let subscribe = this.subscribe[pid]
     this.subscribe[pid] = []
     this.ongoing[pid] = true
-    if (!this.vms[pid]) await this.instantiate(pid)
+    let error = null
+    if (!this.vms[pid]) {
+      const res = await this.instantiate(pid)
+      if (res?.error) {
+        error = true
+        for (const v of subscribe) v(true)
+        this.ongoing[pid] = false
+        if (this.subscribe[pid].length > 0) await this._eval(pid)
+      }
+    }
+    if (error) return
     await this.execute(pid)
     this.ongoing[pid] = false
-    for (const v of subscribe) v()
+    for (const v of subscribe) v(null)
     if (this.subscribe[pid].length > 0) await this._eval(pid)
   }
 
@@ -208,15 +225,20 @@ class CU extends Base {
     return resp
   }
   getResult(pid, mid, res, start) {
-    this.eval(pid, () => {
+    this.eval(pid, error => {
+      if (error) return this.bad_request(res)
+      let to = null
       if (!this.msgs[mid]) {
-        if (start - Date.now() < 3000) {
-          setTimeout(() => this.getResult(pid, mid, res, start), 500)
+        if (Date.now() - start < 3000) {
+          to = setTimeout(() => {
+            this.getResult(pid, mid, res, start)
+          }, 1000)
         } else {
+          clearTimeout(to)
           return this.bad_request(res)
         }
-        return this.bad_request(res)
       } else {
+        clearTimeout(to)
         res.json(this.parseResult(pid, mid))
       }
     })

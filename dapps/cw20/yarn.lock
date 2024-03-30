@@ -1674,10 +1674,10 @@ csstype@^3.0.2, csstype@^3.1.2:
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.1.3.tgz#d80ff294d114fb0e6ac500fbf85b60137d7eff81"
   integrity sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==
 
-cwao@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/cwao/-/cwao-0.4.0.tgz#c4ae000220a7fb06b40f3e07b5309abcbb5322cf"
-  integrity sha512-uC/HkzcVbdE5nme2+6kU/vQlLxOI/Nh6z/rYPHkAw0ea1VBSKts+VdPOYuDxkFzHPFn+YK2xZEiPKSXc9BOaDw==
+cwao@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/cwao/-/cwao-0.4.2.tgz#12e3f90ec3a1a4de74337397e7de4750ae03c930"
+  integrity sha512-Y+p9QctMqhDItS8zUx4+CkgtTH4GoLEP5id9n9Gy80+iAuhf+ROv6QagVfM1nqydm7T6XerJPhvQpceH3kD37A==
   dependencies:
     arbundles "^0.11.0"
     arweave "^1.15.0"

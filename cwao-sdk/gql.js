@@ -1,5 +1,14 @@
 const { parseTags } = require("./utils")
+const { map, prop } = require("ramda")
 const full_node = `{ id anchor signature recipient owner { address key } fee { winston ar } tags { name value } data { size type } block { id timestamp height previous } parent { id } }`
+
+const query_messages = (process, node = full_node) => `query {
+    transactions (first: 1000, sort: HEIGHT_ASC, recipients:["${process}"], tags:[ { name: "Type", values: ["Message"] }]){
+        edges {
+            node ${node}
+        }
+    }
+}`
 
 const query_scheduler = (process, node = full_node) => `query {
     transactions (sort: HEIGHT_DESC, owners: ["${process}"], tags:[ { name: "Type", values: ["Scheduler-Location"] }]){
@@ -68,7 +77,7 @@ module.exports = class GQL {
     } catch (e) {
       console.log(e)
     }
-    return { ttl, url }
+    return url === null ? null : { ttl, url }
   }
 
   async getSU({ process, address }) {
@@ -91,5 +100,26 @@ module.exports = class GQL {
     } catch (e) {
       return null
     }
+  }
+
+  async getMessages(process) {
+    try {
+      const node = `{ id owner { address } tags { name value } }`
+      const msgs = (
+        await fetch(this.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: query_messages(process),
+          }),
+        }).then(r => r.json())
+      ).data.transactions.edges
+      return map(prop("node"), msgs)
+    } catch (e) {
+      console.log(e)
+    }
+    return []
   }
 }

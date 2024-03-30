@@ -49,7 +49,9 @@ class Base {
   }
 
   bad_request(res, error = "bad request") {
-    res.json({ error })
+    try {
+      res.json({ error })
+    } catch (e) {}
   }
 
   start() {
