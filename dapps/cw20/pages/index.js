@@ -38,15 +38,20 @@ export default function Home() {
   const getBalance = async (id, addr) => {
     const addr32 = toBech32(addr, "ao")
     const cwao = new CWAO({ wallet: arweaveWallet })
-    const _balance =
-      (
-        await cwao.query({
-          process: id,
-          action: "balance",
-          input: { address: addr32 },
-        })
-      )?.balance ?? "0"
-    setBalances(assoc(id, _balance, balances))
+    try {
+      const _balance =
+        (
+          await cwao.query({
+            process: id,
+            action: "balance",
+            input: { address: addr32 },
+          })
+        )?.balance ?? "0"
+      return _balance
+    } catch (e) {
+      popup("Balance coulnd't read", "error")
+      return "0"
+    }
   }
 
   useEffect(() => {
@@ -63,12 +68,14 @@ export default function Home() {
   useEffect(() => {
     ;(async () => {
       if (address) {
+        let _balances = {}
         for (const v of tokens) {
-          await getBalance(v.addr, address)
+          _balances[v.addr] = await getBalance(v.addr, address)
         }
+        setBalances(_balances)
       }
     })()
-  }, [address])
+  }, [address, tokens])
 
   const popup = (title, status = "info") =>
     toast({
@@ -106,11 +113,16 @@ export default function Home() {
     const addr = await arweaveWallet.getActiveAddress()
     setAddress(addr)
     setTokenInitialHolder(addr)
-    const _balance = await cwao.arweave.wallets.getBalance(addr)
-    const balance = (BigInt(_balance) / BigInt("1000000000000")).toString()
-    setBalanceAR(balance)
-    if (balance === "0") await mintAR()
-    popup("Wallet Connected")
+    try {
+      const _balance = await cwao.arweave.wallets.getBalance(addr)
+      const balance = (BigInt(_balance) / BigInt("1000000000000")).toString()
+      setBalanceAR(balance)
+      if (balance === "0") await mintAR()
+      popup("Wallet Connected")
+    } catch (e) {
+      console.log(e)
+      popup("Arweave node not running", "error")
+    }
   }
   const Header = () => (
     <Flex height="70px" align="center">
@@ -619,31 +631,36 @@ export default function Home() {
                         const recipient = toBech32(sendTo, "ao")
                         const addr = await arweaveWallet.getActiveAddress()
                         const from = toBech32(addr, "ao")
-                        await cwao.execute({
-                          process: token,
+                        const res = await cwao.execute({
+                          process: send,
                           action: "transfer",
                           input: { recipient, amount: sendAmount },
                         })
-                        setTimeout(async () => {
-                          try {
-                            popup("Token Transferred")
-                            const _balance =
-                              (
-                                await cwao.query({
-                                  process: send,
-                                  action: "balance",
-                                  input: { address: from },
-                                })
-                              )?.balance ?? "0"
-                            setBalances(assoc(send, _balance, balances))
-                            setSendTo("")
-                            setLoading(null)
-                            setSend(null)
-                          } catch (e) {
-                            alert("something went wrong")
-                            setLoading(null)
-                          }
-                        }, 3000)
+                        if (res.error) {
+                          alert("something went wrong")
+                          setLoading(null)
+                        } else {
+                          setTimeout(async () => {
+                            try {
+                              popup("Token Transferred")
+                              const _balance =
+                                (
+                                  await cwao.query({
+                                    process: send,
+                                    action: "balance",
+                                    input: { address: from },
+                                  })
+                                )?.balance ?? "0"
+                              setBalances(assoc(send, _balance, balances))
+                              setSendTo("")
+                              setLoading(null)
+                              setSend(null)
+                            } catch (e) {
+                              alert("something went wrong")
+                              setLoading(null)
+                            }
+                          }, 3000)
+                        }
                       } catch (e) {
                         alert("something went wrong")
                         setLoading(null)

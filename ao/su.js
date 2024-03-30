@@ -1,6 +1,7 @@
 const crypto = require("crypto")
-const { keys } = require("ramda")
+const { concat, map, keys } = require("ramda")
 const Base = require("./base")
+
 function genHash(prev, current) {
   return crypto
     .createHash("sha256")
@@ -62,7 +63,7 @@ class SU extends Base {
       } else if (type === "Process") {
         this.processes[item.id] = {
           id: item.id,
-          tx: Date.now(),
+          ts: Date.now(),
           process: item,
           owner: address,
         }
@@ -127,13 +128,41 @@ class SU extends Base {
         edges,
       })
     } catch (e) {
-      res.status(400)
-      res.json({ error: "bad request" })
+      console.log(e)
+      return this.bad_request(res)
     }
   }
   async get_processes(req, res) {
     try {
-      const pr = this.processes[req.params["process"]]
+      let pr = this.processes[req.params["process"]]
+      if (!pr) {
+        const id = req.params["process"]
+        const _process = await this.gql.getTx(id)
+        if (!_process) return this.bad_request(res)
+        pr = {
+          id,
+          owner: _process.owner.address,
+          ts: Date.now(),
+          process: { id, tags: _process.tags },
+        }
+        this.processes[req.params["process"]] = pr
+        const msgs = map(v => {
+          return {
+            id: v.id,
+            item: {
+              id: v.id,
+              tags: v.tags,
+            },
+            owner: v.owner.address,
+            ts: Date.now(),
+          }
+        })(await this.gql.getMessages(id))
+        this.pmap[req.params["process"]] ??= []
+        this.pmap[req.params["process"]] = concat(
+          msgs,
+          this.pmap[req.params["process"]],
+        )
+      }
       res.json({
         process_id: pr.id,
         owner: { address: pr.owner },
@@ -142,6 +171,7 @@ class SU extends Base {
       })
     } catch (e) {
       console.log(e)
+      return this.bad_request(res)
     }
   }
 }

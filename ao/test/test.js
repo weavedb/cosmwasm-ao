@@ -13,7 +13,7 @@ describe("WDB", function () {
   before(async () => ({ stop, wallet, arweave, base } = await start()))
   after(async () => await stop())
 
-  it.only("should handle bare cosmwasm", async () => {
+  it("should handle bare cosmwasm", async () => {
     const cwao = new CWAO({ wallet, ...base })
     const sch = await arweave.wallets.jwkToAddress(wallet)
     expect(await cwao.mu.get()).to.eql("ao messenger unit")
@@ -159,5 +159,56 @@ describe("WDB", function () {
       input: { recipient: addr2_32, amount: "20000000" },
     })
     expect((await cwao.cu.result(id, pr.id)).Error).to.exist
+  })
+  it.only("should swawp cw20 tokens on dex", async () => {
+    const cw20_wasm = await getModule(
+      "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
+    )
+    const cwao = new CWAO({ wallet, ...base })
+
+    const wallet2 = await cwao.arweave.wallets.generate()
+    const addr2 = await cwao.arweave.wallets.jwkToAddress(wallet2)
+    await arweave.api.get(`mint/${addr2}/10000000000000000`)
+    await cwao.setSU({ url: base.su })
+
+    const mod_id = await cwao.deploy(cw20_wasm)
+    const sch = await arweave.wallets.jwkToAddress(wallet)
+    const tokenA = cwao.cw({ module: mod_id, scheduler: sch })
+    const tokenB = cwao.cw({ module: mod_id, scheduler: sch })
+
+    const addr32 = toBech32(addr2, "ao")
+    const inputA = {
+      name: "WeaveDB Token",
+      symbol: "WDB",
+      decimals: 18,
+      initial_balances: [{ address: addr32, amount: "5000000" }],
+      mint: {
+        minter: addr32,
+        cap: "1000000000",
+      },
+    }
+    const inputB = {
+      name: "WeaveDB Token B",
+      symbol: "WDB2",
+      decimals: 18,
+      initial_balances: [{ address: addr32, amount: "5000000" }],
+      mint: {
+        minter: addr32,
+        cap: "1000000000",
+      },
+    }
+
+    const { id } = await tokenA.i(inputA)
+    const { id: id2 } = await tokenB.i(inputB)
+    console.log(id, id2)
+
+    const dex_wasm = await getModule(
+      "dex/target/wasm32-unknown-unknown/release/contract.wasm",
+    )
+    const dex_cwao = new CWAO({ wallet, ...base })
+    const mod_id2 = await dex_cwao.deploy(dex_wasm)
+    const dex = dex_cwao.cw({ module: mod_id2, scheduler: sch })
+    const { id: id3 } = await dex.i({ num: 3 })
+    console.log(id3)
   })
 })

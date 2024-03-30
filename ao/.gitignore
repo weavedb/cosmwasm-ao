@@ -1,5 +1,6 @@
 \*shell\*
 target/
+.db
 
 # Logs
 logs

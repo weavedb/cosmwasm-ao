@@ -1975,10 +1975,10 @@ cssfilter@0.0.10:
   resolved "https://registry.yarnpkg.com/cssfilter/-/cssfilter-0.0.10.tgz#c6d2672632a2e5c83e013e6864a42ce8defd20ae"
   integrity sha512-FAaLDaplstoRsDR8XGYH51znUN0UY7nMc6Z9/fvE8EXGwvJE9hu7W2vHwx1+bd6gCYnln9nLbzxFTrcO9YQDZw==
 
-cwao-units@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/cwao-units/-/cwao-units-0.2.1.tgz#6951353cf54d2c6303982338c21e1e0407cbdc7c"
-  integrity sha512-iBEOz0ROXqGmR7FS+xnHZlOQFu8tHgyRGKX/QnlFANgaE9+25Y9WTOwWVVd5RnGiZ0HYbGPcuwFRUoaEfBiv3A==
+cwao-units@^0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/cwao-units/-/cwao-units-0.2.6.tgz#6a7ebd92f3f842787f8083968098a2d82ec6741d"
+  integrity sha512-inJRtV7Njfj8tT8gaZtfiFiNQQNW3YQvpMRGljCPp+cPbwJSeKWnYvgEK7h2ITdJAoyB3YGGcxnlQRDZc5PaoA==
   dependencies:
     "@terran-one/cosmwasm-vm-js" "^0.2.16"
     arbundles "^0.11.0"
@@ -1987,14 +1987,14 @@ cwao-units@^0.2.1:
     base64url "^3.0.1"
     bech32 "^2.0.0"
     cors "^2.8.5"
-    cwao "^0.4.0"
+    cwao "^0.4.2"
     express "^4.18.2"
     ramda "^0.29.1"
 
-cwao@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/cwao/-/cwao-0.4.0.tgz#c4ae000220a7fb06b40f3e07b5309abcbb5322cf"
-  integrity sha512-uC/HkzcVbdE5nme2+6kU/vQlLxOI/Nh6z/rYPHkAw0ea1VBSKts+VdPOYuDxkFzHPFn+YK2xZEiPKSXc9BOaDw==
+cwao@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/cwao/-/cwao-0.4.2.tgz#12e3f90ec3a1a4de74337397e7de4750ae03c930"
+  integrity sha512-Y+p9QctMqhDItS8zUx4+CkgtTH4GoLEP5id9n9Gy80+iAuhf+ROv6QagVfM1nqydm7T6XerJPhvQpceH3kD37A==
   dependencies:
     arbundles "^0.11.0"
     arweave "^1.15.0"
