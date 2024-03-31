@@ -1,6 +1,7 @@
 \*shell\*
 target/
 .db
+.cwao
 
 # Logs
 logs
