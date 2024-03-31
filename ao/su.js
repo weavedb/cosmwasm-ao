@@ -27,6 +27,8 @@ class SU extends Base {
     this.epoch = {}
     this.nonce = {}
     this.hash = {}
+    this.ready = {}
+    this.initializing = {}
     this.init()
   }
 
@@ -70,13 +72,14 @@ class SU extends Base {
         }
         this.epoch[item.id] = 0
         this.nonce[item.id] = 0
+        this.ready[item.id] = true
       }
       if (read_only) {
         const tx = await this.data.tx(await this.data.bundle([item]))
         res.status(201)
         res.json({ id: tx.id, timestamp })
       } else if (type === "Message") {
-        if (!this.processes[item.target]) return this.bad_request(res)
+        if (!this.ready[item.target]) return this.bad_request(res)
         const prev_hash =
           this.hash[item.target] ?? this.processes[item.target].id
         this.hash[item.target] = genHash(prev_hash, item.id)
@@ -214,8 +217,16 @@ class SU extends Base {
   async get_processes(req, res) {
     try {
       const id = req.params["process"]
-      let pr = this.processes[id] ?? (await this.recoverProcess(id))
+      if (!this.ready[id]) {
+        if (!this.initializing[id]) {
+          this.initializing[id] = true
+          await this.recoverProcess(id)
+          this.initializing[id] = false
+        }
+      }
+      let pr = this.processes[id]
       if (!pr) return this.bad_request(res)
+      this.ready[id] = true
       res.json({
         process_id: pr.id,
         owner: { address: pr.owner },
