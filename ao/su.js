@@ -1,5 +1,5 @@
 const crypto = require("crypto")
-const { concat, map, keys } = require("ramda")
+const { path, prop, sortBy, concat, map, keys } = require("ramda")
 const Base = require("./base")
 
 function genHash(prev, current) {
@@ -68,7 +68,7 @@ class SU extends Base {
           owner: address,
         }
       }
-      if (type === "read_only") {
+      if (read_only) {
         const tx = await this.data.tx(await this.data.bundle([item]))
         res.status(201)
         res.json({ id: tx.id, timestamp })
@@ -132,37 +132,68 @@ class SU extends Base {
       return this.bad_request(res)
     }
   }
+  async recoverProcess(id) {
+    const _process = await this.gql.getTx(id)
+    if (!_process) return null
+    const pr = {
+      id,
+      owner: _process.owner.address,
+      ts: Date.now(),
+      process: { id, tags: _process.tags },
+    }
+    this.processes[id] = pr
+    const msgs = map(v => {
+      return {
+        id: v.id,
+        item: {
+          id: v.id,
+          tags: v.tags,
+        },
+        owner: v.owner.address,
+        ts: Date.now(),
+      }
+    })(await this.gql.getMessages(id))
+    const _assignments = await this.gql.getAssignments(id)
+    let amap = {}
+    let amess = []
+    for (const v of _assignments) {
+      for (const t of v.tags) {
+        if (t.name === "Message") {
+          amap[t.value] = v
+          amess.push(t.value)
+          break
+        }
+      }
+    }
+    let emap = {}
+    let new_pmap = []
+    for (let v of this.pmap[id] ?? []) {
+      emap[v.id] = v
+      new_pmap.push(v)
+    }
+    if (amess.length > 0) {
+      const _mess = await this.gql.getMessagesByIds(amess)
+      for (let v of _mess) {
+        const m = this.data.tag.parse(amap[v.id].tags)
+        if (!emap[v.id]) {
+          emap[v.id] = v
+          new_pmap.push({
+            id: v.id,
+            owner: v.owner.address,
+            ts: +m.timestamp,
+            item: { id: v.id, tags: v.tags },
+          })
+        }
+      }
+    }
+    this.pmap[id] = sortBy(prop("ts"))(new_pmap)
+    return pr
+  }
   async get_processes(req, res) {
     try {
-      let pr = this.processes[req.params["process"]]
-      if (!pr) {
-        const id = req.params["process"]
-        const _process = await this.gql.getTx(id)
-        if (!_process) return this.bad_request(res)
-        pr = {
-          id,
-          owner: _process.owner.address,
-          ts: Date.now(),
-          process: { id, tags: _process.tags },
-        }
-        this.processes[req.params["process"]] = pr
-        const msgs = map(v => {
-          return {
-            id: v.id,
-            item: {
-              id: v.id,
-              tags: v.tags,
-            },
-            owner: v.owner.address,
-            ts: Date.now(),
-          }
-        })(await this.gql.getMessages(id))
-        this.pmap[req.params["process"]] ??= []
-        this.pmap[req.params["process"]] = concat(
-          msgs,
-          this.pmap[req.params["process"]],
-        )
-      }
+      const id = req.params["process"]
+      let pr = this.processes[id] ?? (await this.recoverProcess(id))
+      if (!pr) return this.bad_request(res)
       res.json({
         process_id: pr.id,
         owner: { address: pr.owner },

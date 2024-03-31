@@ -2,8 +2,24 @@ const { parseTags } = require("./utils")
 const { map, prop } = require("ramda")
 const full_node = `{ id anchor signature recipient owner { address key } fee { winston ar } tags { name value } data { size type } block { id timestamp height previous } parent { id } }`
 
+const query_messages2 = (ids, node = full_node) => `query {
+    transactions (first: 1000, sort: HEIGHT_ASC, ids:[${map(v => `"${v}"`)(ids).join(",")}], tags:[ { name: "Type", values: ["Message"] }]){
+        edges {
+            node ${node}
+        }
+    }
+}`
+
 const query_messages = (process, node = full_node) => `query {
     transactions (first: 1000, sort: HEIGHT_ASC, recipients:["${process}"], tags:[ { name: "Type", values: ["Message"] }]){
+        edges {
+            node ${node}
+        }
+    }
+}`
+
+const query_assignments = (process, node = full_node) => `query {
+    transactions (first: 1000, sort: HEIGHT_ASC, tags:[ { name: "Type", values: ["Assignment"] }, { name: "Process", values: ["${process}"] }]){
         edges {
             node ${node}
         }
@@ -104,7 +120,6 @@ module.exports = class GQL {
 
   async getMessages(process) {
     try {
-      const node = `{ id owner { address } tags { name value } }`
       const msgs = (
         await fetch(this.url, {
           method: "POST",
@@ -113,6 +128,44 @@ module.exports = class GQL {
           },
           body: JSON.stringify({
             query: query_messages(process),
+          }),
+        }).then(r => r.json())
+      ).data.transactions.edges
+      return map(prop("node"), msgs)
+    } catch (e) {
+      console.log(e)
+    }
+    return []
+  }
+  async getMessagesByIds(ids) {
+    try {
+      const msgs = (
+        await fetch(this.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: query_messages2(ids),
+          }),
+        }).then(r => r.json())
+      ).data.transactions.edges
+      return map(prop("node"), msgs)
+    } catch (e) {
+      console.log(e)
+    }
+    return []
+  }
+  async getAssignments(process) {
+    try {
+      const msgs = (
+        await fetch(this.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: query_assignments(process),
           }),
         }).then(r => r.json())
       ).data.transactions.edges

@@ -15,6 +15,12 @@ function parseTags(tags) {
     "From-Module": "from_module",
     "Read-Only": "read_only",
     "Time-To-Live": "ttl",
+    Message: "message",
+    "Hash-Chain": "hash",
+    Epoch: "epoch",
+    Nonce: "nonce",
+    Timestamp: "timestamp",
+    Variant: "Variant",
   }
   for (let v of tags) {
     if (tmap[v.name] && typeof m[tmap[v.name]] === "undefined") {
