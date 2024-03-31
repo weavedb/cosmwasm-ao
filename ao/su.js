@@ -1,7 +1,6 @@
 const crypto = require("crypto")
 const { path, prop, sortBy, concat, map, keys } = require("ramda")
 const Base = require("./base")
-
 function genHash(prev, current) {
   return crypto
     .createHash("sha256")
@@ -25,11 +24,12 @@ class SU extends Base {
     super({ port, arweave, graphql, type: "SU", wallet, protocol, variant })
     this.pmap = {}
     this.processes = {}
-    this.epoch = 0
-    this.nonce = 0
-    this.hash = ""
+    this.epoch = {}
+    this.nonce = {}
+    this.hash = {}
     this.init()
   }
+
   init() {
     const routes = {
       get: {
@@ -43,6 +43,7 @@ class SU extends Base {
     this.router(routes)
     this.start()
   }
+
   async post_root(req, res) {
     try {
       const { type, valid, item } = await this.data.verifyItem(req.body)
@@ -67,18 +68,23 @@ class SU extends Base {
           process: item,
           owner: address,
         }
+        this.epoch[item.id] = 0
+        this.nonce[item.id] = 0
       }
       if (read_only) {
         const tx = await this.data.tx(await this.data.bundle([item]))
         res.status(201)
         res.json({ id: tx.id, timestamp })
       } else if (type === "Message") {
-        this.hash = genHash(this.hash, item.id)
+        if (!this.processes[item.target]) return this.bad_request(res)
+        const prev_hash =
+          this.hash[item.target] ?? this.processes[item.target].id
+        this.hash[item.target] = genHash(prev_hash, item.id)
         const tags = this.data.tag.assignment({
           process: item.target,
-          epoch: ++this.epoch,
-          nonce: ++this.nonce,
-          hash: this.hash,
+          epoch: ++this.epoch[item.target],
+          nonce: ++this.nonce[item.target],
+          hash: this.hash[item.target],
           timestamp,
           message: item.id,
           height: (await this.arweave.blocks.getCurrent()).height,
@@ -96,6 +102,7 @@ class SU extends Base {
       return this.bad_request(res)
     }
   }
+
   async get_root(req, res) {
     res.json({
       Unit: "Scheduler",
@@ -104,12 +111,14 @@ class SU extends Base {
       Processes: keys(this.processes).sort(),
     })
   }
+
   async get_timestamp(req, res) {
     res.json({
       timestamp: Date.now(),
       block_height: (await this.arweave.blocks.getCurrent()).height,
     })
   }
+
   async get_process(req, res) {
     try {
       let cursor = 0
@@ -132,6 +141,7 @@ class SU extends Base {
       return this.bad_request(res)
     }
   }
+
   async recoverProcess(id) {
     const _process = await this.gql.getTx(id)
     if (!_process) return null
@@ -156,7 +166,9 @@ class SU extends Base {
     const _assignments = await this.gql.getAssignments(id)
     let amap = {}
     let amess = []
+    const addr = await this.arweave.wallets.jwkToAddress(this.wallet)
     for (const v of _assignments) {
+      if (v.owner.address !== addr) continue
       for (const t of v.tags) {
         if (t.name === "Message") {
           amap[t.value] = v
@@ -172,11 +184,20 @@ class SU extends Base {
       new_pmap.push(v)
     }
     if (amess.length > 0) {
+      let hash = id
+      let nonce = 0
       const _mess = await this.gql.getMessagesByIds(amess)
       for (let v of _mess) {
         const m = this.data.tag.parse(amap[v.id].tags)
         if (!emap[v.id]) {
+          const new_hash = genHash(hash, v.id)
+          if (m.hash !== new_hash || +m.nonce !== nonce + 1) continue
+          nonce = +m.nonce
+          hash = new_hash
           emap[v.id] = v
+          this.hash[id] = hash
+          this.epoch[id] = +m.epoch
+          this.nonce[id] = +m.nonce
           new_pmap.push({
             id: v.id,
             owner: v.owner.address,
@@ -189,6 +210,7 @@ class SU extends Base {
     this.pmap[id] = sortBy(prop("ts"))(new_pmap)
     return pr
   }
+
   async get_processes(req, res) {
     try {
       const id = req.params["process"]
