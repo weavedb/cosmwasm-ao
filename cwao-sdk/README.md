@@ -322,3 +322,33 @@ To get a SU URL, either path `scheduler_address` or `process_id`.
 ```javascript
 const { url, ttl } = await gql.getSU({ address, process })
 ```
+#### `getMessages`
+
+To get messages sent to a process.
+
+```javascript
+const { tx, cursor, error } = await gql.getMessages(process_id)
+```
+
+#### `getMessagesByIds`
+
+To get messages by transaction ids.
+
+```javascript
+const { tx, cursor, error } = await gql.getMessagesByIds(ids)
+```
+
+#### `getAll`
+
+By default, gql functions return only the first 1000 items. `getAll` iterates with a cursor and returns all items.
+
+```javascript
+const { tx, cursor, error } = await gql.getAll(func, args)
+
+// example with getMessages
+const { tx, cursor, error } = await gql.getAll("getMessages", [process_id])
+
+// example with getMessagesByIds
+const { tx, cursor, error } = await gql.getAll("getMessagesByIds", [ids])
+
+```
