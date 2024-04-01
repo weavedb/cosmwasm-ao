@@ -155,18 +155,7 @@ class SU extends Base {
       process: { id, tags: _process.tags },
     }
     this.processes[id] = pr
-    const msgs = map(v => {
-      return {
-        id: v.id,
-        item: {
-          id: v.id,
-          tags: v.tags,
-        },
-        owner: v.owner.address,
-        ts: Date.now(),
-      }
-    })(await this.gql.getMessages(id))
-    const _assignments = await this.gql.getAssignments(id)
+    const { txs: _assignments } = await this.gql.getAll("getAssignments", [id])
     let amap = {}
     let amess = []
     const addr = await this.arweave.wallets.jwkToAddress(this.wallet)
@@ -189,7 +178,7 @@ class SU extends Base {
     if (amess.length > 0) {
       let hash = id
       let nonce = 0
-      const _mess = await this.gql.getMessagesByIds(amess)
+      const { txs: _mess } = await this.gql.getAll("getMessagesByIds", [amess])
       for (let v of _mess) {
         const m = this.data.tag.parse(amap[v.id].tags)
         if (!emap[v.id]) {
