@@ -160,7 +160,7 @@ describe("WDB", function () {
     })
     expect((await cwao.cu.result(id, pr.id)).Error).to.exist
   })
-  it.only("should swawp cw20 tokens on dex", async () => {
+  it("should swawp cw20 tokens on dex", async () => {
     const cw20_wasm = await getModule(
       "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
     )
