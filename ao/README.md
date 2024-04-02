@@ -35,8 +35,8 @@ const cu = new CU({ port, wallet, arweave, graphql, protocol, variant })
 
 ## Default Values
 
-- `protocol` : `cwao`
-- `variant` :  `cwao.TN.1`
+- `protocol` : `ao`
+- `variant` :  `ao.TN.1`
 - `graphql` : `http://localhost:1984/graphql`
 - `mu` : `http://localhost:1985`
 - `su` : `http://localhost:1986`

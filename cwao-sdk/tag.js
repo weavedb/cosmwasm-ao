@@ -2,7 +2,7 @@ const { groupBy, prop, concat } = require("ramda")
 const { parseTags } = require("./utils")
 
 class Tag {
-  constructor({ protocol = "cwao", variant = "cwao.TN.1" }) {
+  constructor({ protocol = "ao", variant = "ao.TN.1" }) {
     this.protocol = protocol
     this.variant = variant
   }
