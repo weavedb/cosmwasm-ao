@@ -3,7 +3,7 @@ const Arweave = require("arweave")
 const Base = require("./base")
 const { VM, fromBech32, toBech32 } = require("./cosmwasm")
 const { SU } = require("cwao")
-
+const { includes } = require("ramda")
 class CU extends Base {
   constructor({
     port = 1987,
@@ -164,39 +164,29 @@ class CU extends Base {
         let _tags = this.data.tag.message({ action: "reply", input }, [
           { name: "From-Process", value: pid },
         ])
-        resp.Messages.push({
-          Target: tags.from_process,
-          Tags: _tags,
-        })
+        resp.Messages.push({ Target: tags.from_process, Tags: _tags })
       }
       resp.Error = qres.error
     } else {
       if (tags.read_only === "True") {
         resp.Output = JSON.parse(atob(qres.ok))
       } else {
-        resp.Output = qres
-        for (const v of qres.ok.attributes) {
-          if (v.key === "action" && v.value === "perform_action") {
-            if (this.msgs[mid]) {
-              if (
-                tags.reply_on &&
-                (tags.reply_on === "success" || tags.reply_on === "always") &&
-                qres.ok
-              ) {
-                const input = {
-                  id: Number(tags.reply_id),
-                  result: {
-                    ok: { data: qres.ok.data, events: qres.ok.events },
-                  },
-                }
-                let _tags = this.data.tag.message({ action: "reply", input }, [
-                  { name: "From-Process", value: pid },
-                ])
-                resp.Messages.push({ Target: tags.from_process, Tags: _tags })
-              }
+        if (tags.reply_on) {
+          if (qres.ok && includes(tags.reply_on, ["always", "success"])) {
+            const input = {
+              id: Number(tags.reply_id),
+              result: {
+                ok: { data: qres.ok.data, events: qres.ok.events },
+              },
             }
+            let _tags = this.data.tag.message({ action: "reply", input }, [
+              { name: "From-Process", value: pid },
+            ])
+            resp.Messages.push({ Target: tags.from_process, Tags: _tags })
+          } else if (!qres.ok && includes(tags.reply_on, ["always", "error"])) {
           }
         }
+        resp.Output = qres
         for (const v of qres.ok.messages) {
           const { contract_addr, funds, msg } = v.msg.wasm.execute
           const { id, reply_on } = v

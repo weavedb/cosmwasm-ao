@@ -52,11 +52,12 @@ describe("WDB", function () {
       input: { num: 1, addr: toBech32(pr2.id, "ao") },
     })
     expect(
-      await cwao.query({ process: pr.id, action: "Num", input: {} }),
-    ).to.eql({ num: 6 })
-    expect(
       await cwao.query({ process: pr2.id, action: "Num", input: {} }),
     ).to.eql({ num: 7 })
+
+    expect(
+      await cwao.query({ process: pr.id, action: "Num", input: {} }),
+    ).to.eql({ num: 6 })
 
     await cwao.execute({ process: pr.id, action: "Add5", input: { num: 2 } })
     expect(
@@ -160,6 +161,7 @@ describe("WDB", function () {
     })
     expect((await cwao.cu.result(id, pr.id)).Error).to.exist
   })
+
   it("should swawp cw20 tokens on dex", async () => {
     const cw20_wasm = await getModule(
       "cw20/target/wasm32-unknown-unknown/release/contract.wasm",
@@ -200,7 +202,6 @@ describe("WDB", function () {
 
     const { id } = await tokenA.i(inputA)
     const { id: id2 } = await tokenB.i(inputB)
-    console.log(id, id2)
 
     const dex_wasm = await getModule(
       "dex/target/wasm32-unknown-unknown/release/contract.wasm",
@@ -209,6 +210,5 @@ describe("WDB", function () {
     const mod_id2 = await dex_cwao.deploy(dex_wasm)
     const dex = dex_cwao.cw({ module: mod_id2, scheduler: sch })
     const { id: id3 } = await dex.i({ num: 3 })
-    console.log(id3)
   })
 })
