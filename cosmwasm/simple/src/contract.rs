@@ -60,7 +60,7 @@ mod exec {
         NUM.update(deps.storage, move |num2| -> StdResult<_> {
             Ok(num + num2)
         })?;
-        Ok(Response::new().add_attribute("action", "perform_action").add_events(vec![Event::new("added").add_attribute("num", num.to_string())]))
+        Ok(Response::new().add_events(vec![Event::new("added").add_attribute("num", num.to_string())]))
     }
     
     pub fn add2(_deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
@@ -126,8 +126,7 @@ mod exec {
         })?;
 	let binary_data = to_json_binary(&sub_err)?;
         Ok(
-	    Response::new().add_attribute("action", "perform_action")
-		.set_data(binary_data)
+	    Response::new().set_data(binary_data)
 		.add_events(vec![Event::new("added").add_attribute("num", num.to_string())])
 	)
     }
