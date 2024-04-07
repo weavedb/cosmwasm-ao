@@ -90,6 +90,19 @@ describe("WDB", function () {
     ).to.eql({ num: 17 })
 
     expect((await cwao.cu.state(pr.id)).byteLength).to.eql(1179648)
+
+    await cwao.execute({
+      process: pr.id,
+      action: "Add6",
+      input: { num: 3, addr: toBech32(pr2.id, "ao") },
+    })
+
+    expect(
+      await cwao.query({ process: pr.id, action: "Num", input: {} }),
+    ).to.eql({ num: 20 })
+    expect(
+      await cwao.query({ process: pr2.id, action: "Num", input: {} }),
+    ).to.eql({ num: 13 })
   })
 
   it("should handle cw20 token", async () => {
@@ -123,7 +136,6 @@ describe("WDB", function () {
       scheduler: sch,
       input,
     })
-    return
     await sleep(500)
     expect(
       await cwao.query({
