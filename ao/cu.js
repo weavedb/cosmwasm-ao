@@ -3,7 +3,32 @@ const Arweave = require("arweave")
 const Base = require("./base")
 const { VM, fromBech32, toBech32 } = require("./cosmwasm")
 const { SU } = require("cwao")
-const { includes } = require("ramda")
+const { concat, includes, filter } = require("ramda")
+const reserved_tags = [
+  "Data-Protocol",
+  "Variant",
+  "Type",
+  "Action",
+  "From-Process",
+  "From-Module",
+  "Pushed-For",
+  "Cast",
+  "Load",
+  "Read-Only",
+  "Epoch",
+  "Nonce",
+  "Process",
+  "Hash-Chain",
+  "Timestamp",
+  "Message",
+  "Block-Height",
+  "Module",
+  "Scheduler",
+  "Cron-Interval",
+  "Memory-Limit",
+  "Compute-Limit",
+]
+
 class CU extends Base {
   constructor({
     port = 1987,
@@ -113,7 +138,17 @@ class CU extends Base {
       if (this.results[pid][id]) continue
       try {
         const tags = this.data.tag.parse(v.node.message.tags)
-        const input = JSON.parse(tags.input)
+        let input = {}
+        if (!tags.input) {
+          const _tags = filter(v => {
+            return !includes(v.name)(reserved_tags)
+          })(v.node.message.tags)
+          for (const v of _tags) {
+            if (!/^Cron-Tag-*$/.test(v.name)) input[v.name] = v.value
+          }
+        } else {
+          input = JSON.parse(tags.input)
+        }
         let res = null
         if (tags.read_only === "True") {
           res = this.vms[pid].query(tags.action, input)
@@ -208,6 +243,32 @@ class CU extends Base {
               Target: fromBech32(contract_addr),
               Tags: tags,
             })
+          }
+        }
+        for (const v of qres.ok.events) {
+          if (v.type === "ao_message") {
+            let target = null
+            let action = null
+            let _tags = []
+            for (const a of v.attributes) {
+              if (a.key === "Target") {
+                target = a.value
+              } else if (a.key === "Action") {
+                action = a.value
+              } else {
+                _tags.push({ name: a.key, value: a.value })
+              }
+            }
+            if (target && action) {
+              let tags = this.data.tag.message({ action }, [
+                { name: "From-Process", value: pid },
+              ])
+              tags = concat(tags, _tags)
+              resp.Messages.push({
+                Target: fromBech32(target),
+                Tags: tags,
+              })
+            }
           }
         }
       }

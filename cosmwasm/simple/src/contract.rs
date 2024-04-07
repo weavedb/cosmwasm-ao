@@ -44,6 +44,8 @@ pub fn execute(
 	Add3 { num, addr } => exec::add3(deps, info, num, addr),
 	Add4 { num, addr } => exec::add4(deps, info, num, addr),
 	Add5 { num } => exec::add5(deps, info, num),
+	Add6 { num, addr } => exec::add6(deps, info, num, addr),
+	Add7 { num } => exec::add7(deps, info, num),
     }
 }
 
@@ -130,5 +132,18 @@ mod exec {
 		.add_events(vec![Event::new("added").add_attribute("num", num.to_string())])
 	)
     }
+
+    pub fn add6(deps: DepsMut, _info: MessageInfo, num: u8, addr: String) -> StdResult<Response> {
+        NUM.update(deps.storage, move |num2| -> StdResult<_> {
+            Ok(num + num2)
+        })?;
+        Ok(Response::new().add_events(vec![Event::new("ao_message").add_attribute("Action", "Add7").add_attribute("num", num.to_string()).add_attribute("Target", addr)]))
+    }
     
+    pub fn add7(deps: DepsMut, _info: MessageInfo, num: String) -> StdResult<Response> {
+        NUM.update(deps.storage, move |num2| -> StdResult<_> {
+            Ok(num2 + num.parse::<u8>().unwrap())
+        })?;
+        Ok(Response::new())
+    }
 }

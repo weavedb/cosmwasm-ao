@@ -49,11 +49,8 @@ class Tag {
     return concat(tags, custom)
   }
   message({ input, action, read_only = false }, custom = []) {
-    let tags = [
-      ...this.base("Message"),
-      { name: "Input", value: JSON.stringify(input) },
-      { name: "Action", value: action },
-    ]
+    let tags = [...this.base("Message"), { name: "Action", value: action }]
+    if (input) tags.push({ name: "Input", value: JSON.stringify(input ?? {}) })
     if (read_only) tags.push({ name: "Read-Only", value: "True" })
     return concat(tags, custom)
   }
