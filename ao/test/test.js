@@ -223,4 +223,73 @@ describe("WDB", function () {
     const dex = dex_cwao.cw({ module: mod_id2, scheduler: sch })
     const { id: id3 } = await dex.i({ num: 3 })
   })
+
+  it.only("should handle cwao20 token", async () => {
+    const _binary = await getModule(
+      "cwao20/target/wasm32-unknown-unknown/release/contract.wasm",
+    )
+    const cwao = new CWAO({ wallet, ...base })
+    const wallet2 = await cwao.arweave.wallets.generate()
+    const addr2 = await cwao.arweave.wallets.jwkToAddress(wallet2)
+    const addr2_32 = toBech32(addr2, "ao")
+    const mod_id = await cwao.deploy(_binary)
+
+    await cwao.setSU({ url: base.su })
+
+    const sch = await arweave.wallets.jwkToAddress(wallet)
+
+    const addr32 = toBech32(sch, "ao")
+
+    const input = {
+      name: "Wrapped DB Token",
+      symbol: "WDB",
+      decimals: 18,
+      initial_balances: [{ address: addr32, amount: "5000000" }],
+      mint: {
+        minter: addr32,
+        cap: "1000000000",
+      },
+    }
+    const pr = await cwao.instantiate({
+      module: mod_id,
+      scheduler: sch,
+      input,
+    })
+    await sleep(500)
+    expect(
+      await cwao.query({
+        process: pr.id,
+        action: "balance",
+        input: { address: addr32 },
+      }),
+    ).to.eql({ balance: "5000000" })
+    await cwao.execute({
+      process: pr.id,
+      action: "transfer",
+      input: { recipient: addr2_32, amount: "2000000" },
+    })
+    await sleep(500)
+    expect(
+      await cwao.query({
+        process: pr.id,
+        action: "balance",
+        input: { address: addr2_32 },
+      }),
+    ).to.eql({ balance: "2000000" })
+    expect(
+      await cwao.query({
+        process: pr.id,
+        action: "balance",
+        input: { address: addr32 },
+      }),
+    ).to.eql({ balance: "3000000" })
+
+    // test error
+    const { id } = await cwao.execute({
+      process: pr.id,
+      action: "transfer",
+      input: { recipient: addr2_32, amount: "20000000" },
+    })
+    expect((await cwao.cu.result(id, pr.id)).Error).to.exist
+  })
 })

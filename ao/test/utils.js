@@ -1,6 +1,7 @@
 const ArLocal = require("arlocal").default
 const Arweave = require("arweave")
 const { MU, SU, CU } = require("../")
+const CUWDB = require("../cu-weavedb")
 const { readFileSync } = require("fs")
 const { bech32 } = require("bech32")
 const { resolve } = require("path")
@@ -35,6 +36,7 @@ const start = async (
     port: 1994,
     protocol: "http",
   },
+  type,
 ) => {
   const arweave = Arweave.init(network)
   const arLocal = new ArLocal(1994, false)
@@ -52,9 +54,10 @@ const start = async (
     arweave: network,
     graphql: "http://localhost:1994/graphql",
   }
+  const _CU = type === "wdb" ? CUWDB : CU
   const mu = new MU({ wallet, port: 1995, ...base })
   const su = new SU({ wallet, port: 1996, ...base })
-  const cu = new CU({ wallet, port: 1997, ...base })
+  const cu = new _CU({ wallet, port: 1997, ...base })
   const stop = async () => {
     await arLocal.stop()
     mu.stop()
