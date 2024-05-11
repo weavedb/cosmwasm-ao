@@ -71,6 +71,13 @@ class CU extends Base {
     return vm
   }
 
+  async _instantiate(pid, input) {
+    let result = null
+    result = this.vms[pid].instantiate(this.msgs[pid].owner.address, input)
+    this.results[pid][pid] = result.json
+    console.log(result.json)
+  }
+
   async instantiate(pid) {
     if (
       !this.sus[pid] ||
@@ -85,21 +92,15 @@ class CU extends Base {
       if (res.error) return { error: true }
       this.msgs[pid] = res
       const process = this.data.tag.parse(this.msgs[pid].tags)
-      this.vms[pid] = await this.getModule(process.module, pid)
       const input = JSON.parse(process.input)
+      this.vms[pid] = await this.getModule(process.module, pid, input)
       this.results[pid] ??= {}
-      let result = null
-      try {
-        result = this.vms[pid].instantiate(this.msgs[pid].owner.address, input)
-        this.results[pid][pid] = result.json
-      } catch (e) {
-        console.log(e)
-      }
-      return result.json
+      await this._instantiate(pid, input)
     } catch (e) {
       console.log(e)
-      return { error: true }
+      this.results[pid][pid] = { error: true }
     }
+    return this.results[pid][pid]
   }
 
   async _eval(pid) {
@@ -129,7 +130,17 @@ class CU extends Base {
     this.subscribe[pid].push(cb)
     if (!this.ongoing[pid]) await this._eval(pid)
   }
-
+  async _execute({ pid, tags, input, id, v }) {
+    let res = null
+    if (tags.read_only === "True") {
+      res = this.vms[pid].query(tags.action, input)
+    } else if (tags.action === "reply") {
+      res = this.vms[pid].reply(input)
+    } else {
+      res = this.vms[pid].execute(v.node.owner.address, tags.action, input)
+    }
+    this.results[pid][id] = res.json
+  }
   async execute(pid) {
     if (!this.sus[pid]) return
     const pmap = (await new SU({ url: this.sus[pid].url }).process(pid)).edges
@@ -149,18 +160,11 @@ class CU extends Base {
         } else {
           input = JSON.parse(tags.input)
         }
-        let res = null
-        if (tags.read_only === "True") {
-          res = this.vms[pid].query(tags.action, input)
-        } else if (tags.action === "reply") {
-          res = this.vms[pid].reply(input)
-        } else {
-          res = this.vms[pid].execute(v.node.owner.address, tags.action, input)
-        }
+        await this._execute({ pid, tags, v, input, id })
         this.msgs[v.node.message.id] = v.node.message
-        this.results[pid][id] = res.json
       } catch (e) {
         console.log(e)
+        this.results[pid][id] = { error: true }
       }
     }
   }

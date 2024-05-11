@@ -3,7 +3,7 @@ use cosmwasm_std::{
 };
 use serde::{Serialize, Deserialize};
 use crate::state::NUM;
-use crate::msg::{ NumResp, InstantiateMsg, QueryMsg, ExecuteMsg};
+use crate::msg::{ NumResp, InstantiateMsg, QueryMsg, ExecuteMsg };
 
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;
@@ -21,6 +21,7 @@ mod query {
     }
     
 }
+
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,

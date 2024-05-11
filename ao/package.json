@@ -1,6 +1,6 @@
 {
   "name": "cwao-units",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -17,7 +17,9 @@
     "cors": "^2.8.5",
     "cwao": "^0.5.3",
     "express": "^4.18.2",
-    "ramda": "^0.29.1"
+    "ramda": "^0.29.1",
+    "weavedb-node-client": "^0.40.0",
+    "weavedb-offchain": "^0.40.4"
   },
   "devDependencies": {
     "chai": "4",

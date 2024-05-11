@@ -8,9 +8,8 @@ pub enum ExecuteMsg {
     Add4 { num: u8, addr: String },
     Add5 { num: u8 },
     Add6 { num: u8, addr: String },
-    Add7 { num: String },
+    Add7 { num: String }
 }
-
 
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum QueryMsg {
