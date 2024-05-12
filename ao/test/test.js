@@ -211,7 +211,11 @@ describe("WDB", function () {
       await cwao.query({ process: pr.id, action: "Info", input: {} }),
     ).to.eql({ Name: "WeaveDB", Ticker: "WDB", Denomination: "6" })
     expect(
-      await cwao.query({ process: pr.id, action: "Balance", input: {} }),
+      await cwao.query({
+        process: pr.id,
+        action: "Balance",
+        input: { Target: addr32 },
+      }),
     ).to.eql({ Balance: "100", Ticker: "WDB" })
   })
 })

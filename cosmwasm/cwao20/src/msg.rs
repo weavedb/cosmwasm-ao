@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-
+use cosmwasm_std::{ Addr };
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum ExecuteMsg {
     Mint { num: String },
@@ -9,7 +9,7 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum QueryMsg {
     Info {},
-    Balance {}
+    Balance { Target: Addr }
 }
 
 #[derive(Serialize, Deserialize)]
