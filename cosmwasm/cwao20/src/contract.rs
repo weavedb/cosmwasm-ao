@@ -1,15 +1,16 @@
 use cosmwasm_std::{
-    Addr, to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn, StdError
+    Order, Addr, to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn, StdError
 };
 use serde::{ Serialize, Deserialize };
 use crate::state::{ BALANCES, NAME, TICKER, LOGO, DENOMINATION, OWNER };
-use crate::msg::{ BalanceResp, InfoResp, InstantiateMsg, QueryMsg, ExecuteMsg };
+use crate::msg::{ BalanceResp, BalancesResp, InfoResp, InstantiateMsg, QueryMsg, ExecuteMsg };
 
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;
     match msg {
 	Info {} => to_json_binary(&query::info(deps)?),
 	Balance { Target } => to_json_binary(&query::balance(deps, Target)?),
+	Balances {} => to_json_binary(&query::balances(deps)?),
     }
 }
 
@@ -29,6 +30,15 @@ mod query {
 	    unwrap_or_else(|| "0".to_string());
 	let ticker = TICKER.load(deps.storage)?;
         let resp = BalanceResp { Balance: balance, Ticker: ticker };
+        Ok(resp)
+    }
+
+    pub fn balances(deps: Deps) -> StdResult<BalancesResp> {
+	let balances: Vec<(Addr, u8)> = BALANCES
+        .range(deps.storage, None, None, Order::Ascending)
+        .map(|item| item.map(|(key, value)| (key, value)))
+        .collect::<StdResult<Vec<(Addr, u8)>>>()?;
+        let resp = BalancesResp { Balances: balances };
         Ok(resp)
     }
     
