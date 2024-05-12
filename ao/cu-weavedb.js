@@ -5,7 +5,7 @@ const Arweave = require("arweave")
 const CU = require("./cu")
 const { VM, fromBech32, toBech32 } = require("./cosmwasm")
 const { SU } = require("cwao")
-const { concat, includes, filter, clone, isNil } = require("ramda")
+const { concat, includes, filter, clone, isNil, last } = require("ramda")
 const reserved_tags = [
   "Data-Protocol",
   "Variant",
@@ -41,6 +41,62 @@ class CUWDB extends CU {
     this.zkeyRU = params.zkeyRU
     this.wasm = params.wasm
     this.zkey = params.zkey
+  }
+
+  init() {
+    const routes = {
+      get: {
+        "/": "root",
+        "/state/:process": "state",
+        "/result/:message": "result",
+        "/hash/:process": "hash",
+        "/zkjson/:process": "zkjson",
+      },
+    }
+    this.router(routes)
+    this.start()
+  }
+
+  async get_hash(req, res) {
+    try {
+      const pid = req.params["process"]
+      if (!this.hashes[pid]) return this.bad_request(res)
+      res.json({
+        hash: last(this.hashes[pid]),
+        height: this.hashes[pid].length,
+      })
+    } catch (e) {
+      return this.bad_request(res)
+    }
+  }
+
+  async get_zkjson(req, res) {
+    try {
+      const pid = req.params["process"]
+      if (!this.hashes[pid]) return this.bad_request(res)
+      const { path, doc, collection } = req.query
+      const col_id = this.cols[pid]["ppl"]
+      const data = await this.vms[pid].read({
+        function: "get",
+        query: [collection, doc],
+      })
+      const zkp = await this.zkdbs[pid].genProof({
+        json: data,
+        col_id,
+        path,
+        id: doc,
+      })
+      res.json({
+        zkp,
+        data,
+        path,
+        doc,
+        collection,
+        col_id,
+      })
+    } catch (e) {
+      return this.bad_request(res)
+    }
   }
 
   async getModule(txid, pr_id, state) {
@@ -93,20 +149,8 @@ class CUWDB extends CU {
               const col_id = this.cols[pr_id][v.collection]
               const res = await this.zkdbs[pr_id].insert(col_id, v.doc, v.data)
               this.hashes[pr_id].push(
-                Buffer.from(res.tree.root).toString("hex"),
+                res.tree.F.toObject(res.tree.root).toString(),
               )
-              /*
-              this.zkdbs[pr_id]
-                .genProof({
-                  json: v.data,
-                  col_id,
-                  path: "name",
-                  id: v.doc,
-                })
-                .then(zkp2 => {
-                  console.log(zkp2)
-                  })
-                  */
             }
           }
         },
