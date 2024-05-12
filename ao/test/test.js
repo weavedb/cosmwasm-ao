@@ -243,5 +243,15 @@ describe("WDB", function () {
         input: { Target: addr2_32 },
       }),
     ).to.eql({ Balance: "30", Ticker: "WDB" })
+
+    expect(
+      (
+        await cwao.query({
+          process: pr.id,
+          action: "Balances",
+          input: {},
+        })
+      ).Balances.length,
+    ).to.eql(2)
   })
 })
