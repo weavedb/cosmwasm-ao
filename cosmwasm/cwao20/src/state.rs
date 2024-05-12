@@ -1,5 +1,6 @@
 use cosmwasm_std::{ Addr };
-use cw_storage_plus::{Map, Item};
+use cw_storage_plus::{ Map, Item };
+
 pub const BALANCES: Map<Addr, u8> = Map::new("balances");
 pub const OWNER: Item<Addr> = Item::new("owner");
 pub const NAME: Item<String> = Item::new("name");

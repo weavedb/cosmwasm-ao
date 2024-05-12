@@ -1,9 +1,9 @@
 use cosmwasm_std::{
     Addr, to_json_binary, Binary, Deps, DepsMut, Env, Event, MessageInfo, Response, StdResult,WasmMsg, CosmosMsg, SubMsg, ReplyOn, StdError
 };
-use serde::{Serialize, Deserialize};
-use crate::state::{BALANCES, NAME, TICKER, LOGO, DENOMINATION, OWNER};
-use crate::msg::{ BalanceResp, InfoResp, InstantiateMsg, QueryMsg, ExecuteMsg};
+use serde::{ Serialize, Deserialize };
+use crate::state::{ BALANCES, NAME, TICKER, LOGO, DENOMINATION, OWNER };
+use crate::msg::{ BalanceResp, InfoResp, InstantiateMsg, QueryMsg, ExecuteMsg };
 
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use QueryMsg::*;
@@ -60,12 +60,14 @@ pub fn execute(
     use ExecuteMsg::*;
     match msg {
 	Mint { Quantity } => exec::mint(deps, info, Quantity),
+	Transfer { Recipient, Quantity } => exec::transfer(deps, info, Recipient, Quantity),
     }
 }
 
 mod exec {
     use super::*;
     use ExecuteMsg::*;
+    
     pub fn mint(deps: DepsMut, info: MessageInfo, Quantity: String) -> StdResult<Response> {
 	let owner = OWNER.load(deps.storage)?;
 	if info.sender != owner {
@@ -74,6 +76,23 @@ mod exec {
 	let quantity: u8 = Quantity.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
         BALANCES.update(deps.storage, info.sender, |balance| -> StdResult<u8> {
 	    Ok(quantity + balance.unwrap_or_default())
+	})?;
+        Ok(Response::new())
+    }
+
+    pub fn transfer(deps: DepsMut, info: MessageInfo, Recipient: Addr, Quantity: String) -> StdResult<Response> {
+	let quantity: u8 = Quantity.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
+	let balance = BALANCES.may_load(deps.storage, info.sender.clone()).
+	    unwrap_or_default().
+	    unwrap_or(0);
+	if balance < quantity {
+	    return Err(StdError::generic_err("not enough balance"));
+	}
+        BALANCES.update(deps.storage, info.sender, |balance| -> StdResult<u8> {
+	    Ok(balance.unwrap_or_default() - quantity)
+	})?;
+	BALANCES.update(deps.storage, Recipient, |balance| -> StdResult<u8> {
+	    Ok(balance.unwrap_or_default() + quantity)
 	})?;
         Ok(Response::new())
     }

@@ -1,8 +1,10 @@
-use serde::{Deserialize, Serialize};
+use serde::{ Deserialize, Serialize };
 use cosmwasm_std::{ Addr };
+
 #[derive(Serialize, Deserialize, PartialEq)]
 pub enum ExecuteMsg {
     Mint { Quantity: String },
+    Transfer { Quantity: String, Recipient: Addr },
 }
 
 
