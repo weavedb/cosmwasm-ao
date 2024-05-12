@@ -1,10 +1,11 @@
+const { DB: ZKDB } = require("zkjson")
 const WDB = require("weavedb-offchain")
 const express = require("express")
 const Arweave = require("arweave")
 const CU = require("./cu")
 const { VM, fromBech32, toBech32 } = require("./cosmwasm")
 const { SU } = require("cwao")
-const { concat, includes, filter, clone } = require("ramda")
+const { concat, includes, filter, clone, isNil } = require("ramda")
 const reserved_tags = [
   "Data-Protocol",
   "Variant",
@@ -33,10 +34,84 @@ const reserved_tags = [
 class CUWDB extends CU {
   constructor(params) {
     super(params)
+    this.zkdbs = {}
+    this.cols = {}
+    this.hashes = {}
+    this.wasmRU = params.wasmRU
+    this.zkeyRU = params.zkeyRU
+    this.wasm = params.wasm
+    this.zkey = params.zkey
   }
 
   async getModule(txid, pr_id, state) {
-    const wdb = new WDB({ local: true, state, contractTxId: pr_id, type: 3 })
+    this.cols[pr_id] = {}
+    this.hashes[pr_id] = []
+    this.zkdbs[pr_id] = new ZKDB({
+      level: 100,
+      size_path: 5,
+      size_val: 5,
+      size_json: 256,
+      size_txs: 10,
+      level_col: 8,
+      wasmRU: this.wasmRU,
+      zkeyRU: this.zkeyRU,
+      wasm: this.wasm,
+      zkey: this.zkey,
+    })
+    await this.zkdbs[pr_id].init()
+    const wdb = new WDB({
+      local: true,
+      state,
+      contractTxId: pr_id,
+      type: 3,
+      cache: {
+        initialize: async obj => {
+          obj.kvs = {}
+        },
+        get: async (key, obj) => {
+          return obj.kvs[key]
+        },
+        onWrite: async (tx, obj, param) => {
+          let diff = []
+          for (const k in tx.result.kvs) {
+            if (k.split("///")[1]?.split("/")[0] === "data") {
+              let sps = k.split("///")
+              diff.push({
+                collection: sps[0],
+                doc: k.split("///")[1]?.split("/")[1],
+                data: tx.result.kvs[k].val,
+              })
+            }
+            obj.kvs[k] = tx.result.kvs[k]
+          }
+          if (diff.length > 0) {
+            for (const v of diff) {
+              if (isNil(this.cols[pr_id][v.collection])) {
+                this.cols[pr_id][v.collection] =
+                  await this.zkdbs[pr_id].addCollection()
+              }
+              const col_id = this.cols[pr_id][v.collection]
+              const res = await this.zkdbs[pr_id].insert(col_id, v.doc, v.data)
+              this.hashes[pr_id].push(
+                Buffer.from(res.tree.root).toString("hex"),
+              )
+              /*
+              this.zkdbs[pr_id]
+                .genProof({
+                  json: v.data,
+                  col_id,
+                  path: "name",
+                  id: v.doc,
+                })
+                .then(zkp2 => {
+                  console.log(zkp2)
+                  })
+                  */
+            }
+          }
+        },
+      },
+    })
     const wasm = await this.arweave.transactions.getData(txid, { decode: true })
     wdb.setSrc(new TextDecoder().decode(wasm))
     return wdb
