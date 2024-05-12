@@ -75,7 +75,6 @@ class CU extends Base {
     let result = null
     result = this.vms[pid].instantiate(this.msgs[pid].owner.address, input)
     this.results[pid][pid] = result.json
-    console.log(result.json)
   }
 
   async instantiate(pid) {
@@ -92,7 +91,17 @@ class CU extends Base {
       if (res.error) return { error: true }
       this.msgs[pid] = res
       const process = this.data.tag.parse(this.msgs[pid].tags)
-      const input = JSON.parse(process.input)
+      let input = {}
+      if (!process.input) {
+        const _tags = filter(v => {
+          return !includes(v.name)(reserved_tags)
+        })(this.msgs[pid].tags)
+        for (const v of _tags) {
+          if (!/^Cron-Tag-*$/.test(v.name)) input[v.name] = v.value
+        }
+      } else {
+        input = JSON.parse(process.input)
+      }
       this.vms[pid] = await this.getModule(process.module, pid, input)
       this.results[pid] ??= {}
       await this._instantiate(pid, input)
