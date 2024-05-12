@@ -204,7 +204,7 @@ describe("WDB", function () {
     await cwao.execute({
       process: pr.id,
       action: "Mint",
-      custom: [{ name: "num", value: "100" }],
+      custom: [{ name: "Quantity", value: "100" }],
     })
 
     expect(
