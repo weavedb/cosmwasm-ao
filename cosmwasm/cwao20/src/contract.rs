@@ -59,17 +59,21 @@ pub fn execute(
 ) -> StdResult<Response> {
     use ExecuteMsg::*;
     match msg {
-	Mint { num } => exec::mint(deps, info, num),
+	Mint { Quantity } => exec::mint(deps, info, Quantity),
     }
 }
 
 mod exec {
     use super::*;
     use ExecuteMsg::*;
-    pub fn mint(deps: DepsMut, info: MessageInfo, num: String) -> StdResult<Response> {
-	let num_value: u8 = num.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
-        BALANCES.update(deps.storage, info.sender, |num2| -> StdResult<u8> {
-	    Ok(num_value + num2.unwrap_or_default())
+    pub fn mint(deps: DepsMut, info: MessageInfo, Quantity: String) -> StdResult<Response> {
+	let owner = OWNER.load(deps.storage)?;
+	if info.sender != owner {
+            return Err(StdError::generic_err("unauthorized"));
+	}
+	let quantity: u8 = Quantity.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
+        BALANCES.update(deps.storage, info.sender, |balance| -> StdResult<u8> {
+	    Ok(quantity + balance.unwrap_or_default())
 	})?;
         Ok(Response::new())
     }
