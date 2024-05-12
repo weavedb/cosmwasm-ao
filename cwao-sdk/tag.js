@@ -40,17 +40,18 @@ class Tag {
     ]
     return concat(tags, custom)
   }
-  process({ module, scheduler }, custom = []) {
+  process({ module, scheduler, input }, custom = []) {
     let tags = [
       ...this.base("Process"),
       { name: "Module", value: module },
       { name: "Scheduler", value: scheduler },
     ]
+    if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
     return concat(tags, custom)
   }
   message({ input, action, read_only = false }, custom = []) {
     let tags = [...this.base("Message"), { name: "Action", value: action }]
-    if (input) tags.push({ name: "Input", value: JSON.stringify(input ?? {}) })
+    if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
     if (read_only) tags.push({ name: "Read-Only", value: "True" })
     return concat(tags, custom)
   }

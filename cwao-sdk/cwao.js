@@ -48,15 +48,14 @@ class CWAO {
     return tx.id
   }
 
-  async instantiate({ module, scheduler, input, tags }) {
-    tags ??= this.data.tag.process({ module, scheduler })
-    if (input) tags.push({ name: "Input", value: JSON.stringify(input) })
+  async instantiate({ module, scheduler, input, tags, custom }) {
+    tags ??= this.data.tag.process({ module, scheduler, input }, custom)
     const item = await this.data.dataitem({ tags })
     const res = await this.mu.post(item)
     return res
   }
 
-  async execute({ process, action, input = {}, query = false }) {
+  async execute({ process, action, input, query = false, custom }) {
     let signer
     let read_only = false
     if (query) {
@@ -66,7 +65,7 @@ class CWAO {
       }
       signer = new ArweaveSigner(this.query_wallet)
     }
-    let tags = this.data.tag.message({ input, action, read_only })
+    let tags = this.data.tag.message({ input, action, read_only }, custom)
     const item = await this.data.dataitem({ target: process, tags }, "", signer)
     return await this.mu.post(item)
   }
