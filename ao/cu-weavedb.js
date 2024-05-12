@@ -44,7 +44,9 @@ class CUWDB extends CU {
 
   async _instantiate(pid, input) {
     let result = null
-    this.results[pid][pid] = { state: clone(this.vms[pid].state) }
+    this.vms[pid].state = input
+    let state = clone(this.vms[pid].state)
+    this.results[pid][pid] = { state }
     return this.results[pid][pid]
   }
 
@@ -53,7 +55,16 @@ class CUWDB extends CU {
     if (tags.read_only === "True") {
       res = await this.vms[pid].read(input)
     } else {
-      res = await this.vms[pid]._writeContract(input.function, input)
+      res = await this.vms[pid]._writeContract(
+        input.function,
+        input,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        v.node.owner.address,
+      )
     }
     this.results[pid][id] = res
   }
