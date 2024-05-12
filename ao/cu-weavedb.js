@@ -149,7 +149,9 @@ class CUWDB extends CU {
               const col_id = this.cols[pr_id][v.collection]
               const res = await this.zkdbs[pr_id].insert(col_id, v.doc, v.data)
               this.hashes[pr_id].push(
-                res.tree.F.toObject(res.tree.root).toString(),
+                this.zkdbs[pr_id].tree.F.toObject(
+                  this.zkdbs[pr_id].tree.root,
+                ).toString(),
               )
             }
           }
