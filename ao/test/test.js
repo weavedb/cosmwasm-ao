@@ -210,6 +210,7 @@ describe("WDB", function () {
     expect(
       await cwao.query({ process: pr.id, action: "Info", input: {} }),
     ).to.eql({ Name: "WeaveDB", Ticker: "WDB", Denomination: "6" })
+
     expect(
       await cwao.query({
         process: pr.id,
@@ -217,5 +218,30 @@ describe("WDB", function () {
         input: { Target: addr32 },
       }),
     ).to.eql({ Balance: "100", Ticker: "WDB" })
+
+    await cwao.execute({
+      process: pr.id,
+      action: "Transfer",
+      custom: [
+        { name: "Quantity", value: "30" },
+        { name: "Recipient", value: addr2_32 },
+      ],
+    })
+
+    expect(
+      await cwao.query({
+        process: pr.id,
+        action: "Balance",
+        input: { Target: addr32 },
+      }),
+    ).to.eql({ Balance: "70", Ticker: "WDB" })
+
+    expect(
+      await cwao.query({
+        process: pr.id,
+        action: "Balance",
+        input: { Target: addr2_32 },
+      }),
+    ).to.eql({ Balance: "30", Ticker: "WDB" })
   })
 })
