@@ -78,7 +78,8 @@ class MU extends Base {
         .result(item.id, item.target)
         .then(async json => {
           clearTimeout(to)
-          if (res) res.json({ id: item.id })
+          // returning result might be out of spec
+          if (res) res.json({ id: item.id, result: json.Output })
           if (json.Error) console.log(json.Error)
           for (const v of json.Messages ?? []) {
             const _id = await this.send(
