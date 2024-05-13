@@ -98,13 +98,13 @@ mod exec {
 	if balance < quantity {
 	    return Err(StdError::generic_err("not enough balance"));
 	}
-        BALANCES.update(deps.storage, info.sender, |balance| -> StdResult<u8> {
+        BALANCES.update(deps.storage, info.sender.clone(), |balance| -> StdResult<u8> {
 	    Ok(balance.unwrap_or_default() - quantity)
 	})?;
-	BALANCES.update(deps.storage, Recipient, |balance| -> StdResult<u8> {
+	BALANCES.update(deps.storage, Recipient.clone(), |balance| -> StdResult<u8> {
 	    Ok(balance.unwrap_or_default() + quantity)
 	})?;
-        Ok(Response::new())
+	Ok(Response::new().add_events(vec![Event::new("ao_message").add_attribute("Action", "Credit-Notice").add_attribute("Sender", info.sender.to_string()).add_attribute("Quantity", Quantity).add_attribute("Target", Recipient.to_string())]))
     }
     
 }
