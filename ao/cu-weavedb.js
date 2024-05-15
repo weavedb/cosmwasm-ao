@@ -3,7 +3,6 @@ const WDB = require("weavedb-offchain")
 const express = require("express")
 const Arweave = require("arweave")
 const CU = require("./cu")
-const { VM, fromBech32, toBech32 } = require("./cosmwasm")
 const { SU } = require("cwao")
 const { concat, includes, filter, clone, isNil, last } = require("ramda")
 const reserved_tags = [
