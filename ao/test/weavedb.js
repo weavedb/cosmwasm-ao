@@ -1,9 +1,8 @@
 const { expect } = require("chai")
 const { CWAO } = require("../../cwao-sdk")
-const { start, sleep, toBech32, getModule } = require("./utils")
+const { start, sleep, getModule } = require("./utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
-const { bech32 } = require("bech32")
 const base64url = require("base64url")
 const DB = require("weavedb-node-client")
 

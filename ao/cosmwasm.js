@@ -3,6 +3,7 @@ const {
   BasicKVIterStorage,
   BasicQuerier,
   VMInstance,
+  Region,
 } = require("@terran-one/cosmwasm-vm-js")
 const { bech32 } = require("bech32")
 const base64url = require("base64url")
@@ -21,7 +22,14 @@ function toBech32(arweaveAddress, prefix = "ao") {
   const bech32Address = bech32.encode(prefix, words)
   return bech32Address
 }
-
+class VMInstanceAO extends VMInstance {
+  do_addr_validate(source) {
+    if (!/^[a-z0-9_-]{43}$/i.test(source.str)) {
+      throw new Error("Invalid address.")
+    }
+    return new Region(this.exports.memory, 0)
+  }
+}
 class VM {
   constructor({ id, addr }) {
     this.id = id
@@ -39,7 +47,7 @@ class VM {
       storage: new BasicKVIterStorage(),
       //querier: new BasicQuerier(),
     }
-    this.vm = new VMInstance(backend)
+    this.vm = new VMInstanceAO(backend)
     await this.vm.build(wasm)
     return this.vm
   }
@@ -55,7 +63,8 @@ class VM {
     }
   }
   info(sender) {
-    return { sender: this.toBech32(sender), funds: [] }
+    //return { sender: this.toBech32(sender), funds: [] }
+    return { sender: sender, funds: [] }
   }
   instantiate(sender, input) {
     return this.vm.instantiate(this.env(), this.info(sender), input)

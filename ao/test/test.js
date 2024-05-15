@@ -1,9 +1,8 @@
 const { expect } = require("chai")
 const { CWAO } = require("../../cwao-sdk")
-const { start, sleep, toBech32, getModule } = require("./utils")
+const { start, sleep, getModule } = require("./utils")
 const { readFileSync } = require("fs")
 const { resolve } = require("path")
-const { bech32 } = require("bech32")
 const base64url = require("base64url")
 
 describe("WDB", function () {
@@ -44,12 +43,12 @@ describe("WDB", function () {
     await cwao.execute({
       process: pr.id,
       action: "Add2",
-      input: { num: 3, addr: toBech32(pr2.id, "ao") },
+      input: { num: 3, addr: pr2.id },
     })
     await cwao.execute({
       process: pr.id,
       action: "Add3",
-      input: { num: 1, addr: toBech32(pr2.id, "ao") },
+      input: { num: 1, addr: pr2.id },
     })
     expect(
       await cwao.query({ process: pr2.id, action: "Num", input: {} }),
@@ -67,7 +66,7 @@ describe("WDB", function () {
     await cwao.execute({
       process: pr.id,
       action: "Add4",
-      input: { num: 1, addr: toBech32(pr2.id, "ao") },
+      input: { num: 1, addr: pr2.id },
     })
     await sleep(500)
     expect(
@@ -77,7 +76,7 @@ describe("WDB", function () {
     await cwao.execute({
       process: pr.id,
       action: "Add4",
-      input: { num: 3, addr: toBech32(pr2.id, "ao") },
+      input: { num: 3, addr: pr2.id },
     })
     await sleep(500)
 
@@ -94,7 +93,7 @@ describe("WDB", function () {
     await cwao.execute({
       process: pr.id,
       action: "Add6",
-      input: { num: 3, addr: toBech32(pr2.id, "ao") },
+      input: { num: 3, addr: pr2.id },
     })
 
     expect(
@@ -112,22 +111,19 @@ describe("WDB", function () {
     const cwao = new CWAO({ wallet, ...base })
     const wallet2 = await cwao.arweave.wallets.generate()
     const addr2 = await cwao.arweave.wallets.jwkToAddress(wallet2)
-    const addr2_32 = toBech32(addr2, "ao")
     const mod_id = await cwao.deploy(_binary)
 
     await cwao.setSU({ url: base.su })
 
     const sch = await arweave.wallets.jwkToAddress(wallet)
 
-    const addr32 = toBech32(sch, "ao")
-
     const input = {
       name: "WeaveDB Token",
       symbol: "WDB",
       decimals: 18,
-      initial_balances: [{ address: addr32, amount: "5000000" }],
+      initial_balances: [{ address: sch, amount: "5000000" }],
       mint: {
-        minter: addr32,
+        minter: sch,
         cap: "1000000000",
       },
     }
@@ -141,27 +137,27 @@ describe("WDB", function () {
       await cwao.query({
         process: pr.id,
         action: "balance",
-        input: { address: addr32 },
+        input: { address: sch },
       }),
     ).to.eql({ balance: "5000000" })
     await cwao.execute({
       process: pr.id,
       action: "transfer",
-      input: { recipient: addr2_32, amount: "2000000" },
+      input: { recipient: addr2, amount: "2000000" },
     })
     await sleep(500)
     expect(
       await cwao.query({
         process: pr.id,
         action: "balance",
-        input: { address: addr2_32 },
+        input: { address: addr2 },
       }),
     ).to.eql({ balance: "2000000" })
     expect(
       await cwao.query({
         process: pr.id,
         action: "balance",
-        input: { address: addr32 },
+        input: { address: sch },
       }),
     ).to.eql({ balance: "3000000" })
 
@@ -169,26 +165,23 @@ describe("WDB", function () {
     const { id } = await cwao.execute({
       process: pr.id,
       action: "transfer",
-      input: { recipient: addr2_32, amount: "20000000" },
+      input: { recipient: addr2, amount: "20000000" },
     })
     expect((await cwao.cu.result(id, pr.id)).Error).to.exist
   })
 
-  it.only("should handle cwao20 token", async () => {
+  it("should handle cwao20 token", async () => {
     const _binary = await getModule(
       "cwao20/target/wasm32-unknown-unknown/release/contract.wasm",
     )
     const cwao = new CWAO({ wallet, ...base })
     const wallet2 = await cwao.arweave.wallets.generate()
     const addr2 = await cwao.arweave.wallets.jwkToAddress(wallet2)
-    const addr2_32 = toBech32(addr2, "ao")
     const mod_id = await cwao.deploy(_binary)
 
     await cwao.setSU({ url: base.su })
 
     const sch = await arweave.wallets.jwkToAddress(wallet)
-
-    const addr32 = toBech32(sch, "ao")
 
     const pr = await cwao.instantiate({
       module: mod_id,
@@ -215,7 +208,7 @@ describe("WDB", function () {
       await cwao.query({
         process: pr.id,
         action: "Balance",
-        input: { Target: addr32 },
+        input: { Target: sch },
       }),
     ).to.eql({ Balance: "100", Ticker: "WDB" })
 
@@ -224,7 +217,7 @@ describe("WDB", function () {
       action: "Transfer",
       custom: [
         { name: "Quantity", value: "30" },
-        { name: "Recipient", value: addr2_32 },
+        { name: "Recipient", value: addr2 },
       ],
     })
 
@@ -232,7 +225,7 @@ describe("WDB", function () {
       await cwao.query({
         process: pr.id,
         action: "Balance",
-        input: { Target: addr32 },
+        input: { Target: sch },
       }),
     ).to.eql({ Balance: "70", Ticker: "WDB" })
 
@@ -240,7 +233,7 @@ describe("WDB", function () {
       await cwao.query({
         process: pr.id,
         action: "Balance",
-        input: { Target: addr2_32 },
+        input: { Target: addr2 },
       }),
     ).to.eql({ Balance: "30", Ticker: "WDB" })
 

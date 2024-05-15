@@ -1,7 +1,7 @@
 const express = require("express")
 const Arweave = require("arweave")
 const Base = require("./base")
-const { VM, fromBech32, toBech32 } = require("./cosmwasm")
+const { VM } = require("./cosmwasm")
 const { SU } = require("cwao")
 const { concat, includes, filter } = require("ramda")
 const reserved_tags = [
@@ -253,7 +253,7 @@ class CU extends Base {
               custom,
             )
             resp.Messages.push({
-              Target: fromBech32(contract_addr),
+              Target: contract_addr,
               Tags: tags,
             })
           }
@@ -278,7 +278,7 @@ class CU extends Base {
               ])
               tags = concat(tags, _tags)
               resp.Messages.push({
-                Target: fromBech32(target),
+                Target: target,
                 Tags: tags,
               })
             }
