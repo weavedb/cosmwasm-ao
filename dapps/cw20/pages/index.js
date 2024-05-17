@@ -3,16 +3,8 @@ const { ChakraProvider, useToast } = require("@chakra-ui/react")
 const lf = require("localforage")
 const { Input, Flex, Box } = require("@chakra-ui/react")
 const { useState, useEffect } = require("react")
-const bech32 = require("bech32")
 const base64url = require("base64url")
 const { equals, assoc, map, append } = require("ramda")
-
-function toBech32(arweaveAddress, prefix = "ao") {
-  const decodedBytes = base64url.toBuffer(arweaveAddress)
-  const words = bech32.toWords(decodedBytes)
-  const bech32Address = bech32.encode(prefix, words)
-  return bech32Address
-}
 
 export default function Home() {
   const [module, setModule] = useState(null)
@@ -36,7 +28,6 @@ export default function Home() {
   const [loading, setLoading] = useState(null)
   const toast = useToast()
   const getBalance = async (id, addr) => {
-    const addr32 = toBech32(addr, "ao")
     const cwao = new CWAO({ wallet: arweaveWallet })
     try {
       const _balance =
@@ -44,7 +35,7 @@ export default function Home() {
           await cwao.query({
             process: id,
             action: "balance",
-            input: { address: addr32 },
+            input: { address: addr },
           })
         )?.balance ?? "0"
       return _balance
@@ -366,7 +357,10 @@ export default function Home() {
     /^[A-Za-z0-9_-]+$/.test(tokenInitialHolder)
 
   const ok_mint =
-    !/^\s*$/.test(tokenName) & !/^\s*$/.test(tokenSymbol) & valid_holder
+    tokenSymbol.length > 2 &&
+    !/^\s*$/.test(tokenName) &&
+    !/^\s*$/.test(tokenSymbol) &&
+    valid_holder
   const Mint = (
     <>
       <Flex>
@@ -462,16 +456,15 @@ export default function Home() {
             setLoading("token")
             try {
               const cwao = new CWAO({ wallet: arweaveWallet })
-              const addr32 = toBech32(tokenInitialHolder, "ao")
               const input = {
                 name: tokenName,
                 symbol: tokenSymbol,
                 decimals: +tokenDecimals,
                 initial_balances: [
-                  { address: addr32, amount: tokenInitialAmount },
+                  { address: tokenInitialHolder, amount: tokenInitialAmount },
                 ],
                 mint: {
-                  minter: addr32,
+                  minter: tokenInitialHolder,
                   cap: tokenCap,
                 },
               }
@@ -628,9 +621,9 @@ export default function Home() {
                       setLoading("send")
                       try {
                         const cwao = new CWAO({ wallet: arweaveWallet })
-                        const recipient = toBech32(sendTo, "ao")
+                        const recipient = sendTo
                         const addr = await arweaveWallet.getActiveAddress()
-                        const from = toBech32(addr, "ao")
+                        const from = addr
                         const res = await cwao.execute({
                           process: send,
                           action: "transfer",
