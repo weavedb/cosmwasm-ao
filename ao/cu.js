@@ -3,7 +3,7 @@ const Arweave = require("arweave")
 const Base = require("./base")
 const { VM } = require("./cosmwasm")
 const { SU } = require("cwao")
-const { concat, includes, filter } = require("ramda")
+const { isNil, concat, includes, filter } = require("ramda")
 const reserved_tags = [
   "Data-Protocol",
   "Variant",
@@ -195,6 +195,9 @@ class CU extends Base {
       return this.bad_request(res)
     }
   }
+  parseOutput(res) {
+    return JSON.parse(atob(res))
+  }
   parseResult(pid, mid) {
     let resp = { Messages: [], Spawns: [], Output: [] }
     const tags = this.data.tag.parse(this.msgs[mid].tags)
@@ -217,7 +220,7 @@ class CU extends Base {
       resp.Error = qres.error
     } else {
       if (tags.read_only === "True") {
-        resp.Output = JSON.parse(atob(qres.ok))
+        resp.Output = this.parseOutput(qres.ok)
       } else {
         if (tags.reply_on) {
           if (qres.ok && includes(tags.reply_on, ["always", "success"])) {
@@ -235,52 +238,54 @@ class CU extends Base {
           }
         }
         resp.Output = qres
-        for (const v of qres.ok.messages) {
-          const { contract_addr, funds, msg } = v.msg.wasm.execute
-          const { id, reply_on } = v
-          const _msg = JSON.parse(atob(msg))
-          for (let k in _msg) {
-            let custom = [{ name: "From-Process", value: pid }]
-            if (reply_on) {
-              custom.push({ name: "Reply_On", value: reply_on })
-              custom.push({
-                name: "Reply_Id",
-                value: Number(id).toString(),
-              })
-            }
-            let tags = this.data.tag.message(
-              { input: _msg[k], action: k },
-              custom,
-            )
-            resp.Messages.push({
-              Target: contract_addr,
-              Tags: tags,
-            })
-          }
-        }
-        for (const v of qres.ok.events) {
-          if (v.type === "ao_message") {
-            let target = null
-            let action = null
-            let _tags = []
-            for (const a of v.attributes) {
-              if (a.key === "Target") {
-                target = a.value
-              } else if (a.key === "Action") {
-                action = a.value
-              } else {
-                _tags.push({ name: a.key, value: a.value })
+        if (!isNil(qres.ok)) {
+          for (const v of qres.ok.messages ?? []) {
+            const { contract_addr, funds, msg } = v.msg.wasm.execute
+            const { id, reply_on } = v
+            const _msg = JSON.parse(atob(msg))
+            for (let k in _msg) {
+              let custom = [{ name: "From-Process", value: pid }]
+              if (reply_on) {
+                custom.push({ name: "Reply_On", value: reply_on })
+                custom.push({
+                  name: "Reply_Id",
+                  value: Number(id).toString(),
+                })
               }
-            }
-            if (target && action) {
-              let tags = this.data.tag.message({ action }, [
-                { name: "From-Process", value: pid },
-              ])
-              tags = concat(tags, _tags)
+              let tags = this.data.tag.message(
+                { input: _msg[k], action: k },
+                custom,
+              )
               resp.Messages.push({
-                Target: target,
+                Target: contract_addr,
                 Tags: tags,
               })
+            }
+          }
+          for (const v of qres.ok.events ?? []) {
+            if (v.type === "ao_message") {
+              let target = null
+              let action = null
+              let _tags = []
+              for (const a of v.attributes) {
+                if (a.key === "Target") {
+                  target = a.value
+                } else if (a.key === "Action") {
+                  action = a.value
+                } else {
+                  _tags.push({ name: a.key, value: a.value })
+                }
+              }
+              if (target && action) {
+                let tags = this.data.tag.message({ action }, [
+                  { name: "From-Process", value: pid },
+                ])
+                tags = concat(tags, _tags)
+                resp.Messages.push({
+                  Target: target,
+                  Tags: tags,
+                })
+              }
             }
           }
         }
