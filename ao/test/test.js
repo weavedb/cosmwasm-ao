@@ -236,7 +236,6 @@ describe("WDB", function () {
         input: { Target: addr2 },
       }),
     ).to.eql({ Balance: "30", Ticker: "WDB" })
-
     expect(
       (
         await cwao.query({

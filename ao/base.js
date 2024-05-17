@@ -15,9 +15,11 @@ class Base {
     mu,
     su,
     cu,
+    cus,
   }) {
     this.mu = mu
     this.cu = cu
+    this.cus = cus
     this.su = su
     this.graphql = graphql
     this.type = type
