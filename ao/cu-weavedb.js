@@ -161,20 +161,28 @@ class CUWDB extends CU {
     wdb.setSrc(new TextDecoder().decode(wasm))
     return wdb
   }
-
+  parseOutput(res) {
+    return res
+  }
   async _instantiate(pid, input) {
     let result = null
     this.vms[pid].state = input
     let state = clone(this.vms[pid].state)
-    this.results[pid][pid] = { state }
+    this.results[pid][pid] = {
+      state,
+      ok: { messages: [], events: [], attributes: [] },
+    }
     return this.results[pid][pid]
   }
 
   async _execute({ pid, tags, input, id, v }) {
     let res = null
+    input.function ??= tags.action
     if (tags.read_only === "True") {
-      res = await this.vms[pid].read(input)
+      res = { ok: await this.vms[pid].read(input) }
     } else {
+      let caller = v.node.owner.address
+      if (!isNil(input["From-Process"])) caller = input["From-Process"]
       res = await this.vms[pid]._writeContract(
         input.function,
         input,
@@ -183,26 +191,18 @@ class CUWDB extends CU {
         undefined,
         undefined,
         undefined,
-        v.node.owner.address,
+        caller,
       )
-    }
-    this.results[pid][id] = res
-  }
-
-  parseResult(pid, mid) {
-    let resp = { Messages: [], Spawns: [], Output: [] }
-    const tags = this.data.tag.parse(this.msgs[mid].tags)
-    let qres = this.results[pid][mid]
-    if (qres.error) {
-      resp.Error = qres.error
-    } else {
-      if (tags.read_only === "True") {
-        resp.Output = qres
-      } else {
-        resp.Output = qres
+      res = {
+        ...res,
+        ok: {
+          messages: res.messages ?? [],
+          events: res.events ?? [],
+          attribures: res.attributes ?? [],
+        },
       }
     }
-    return resp
+    this.results[pid][id] = res
   }
 }
 
