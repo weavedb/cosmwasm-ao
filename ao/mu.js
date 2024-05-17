@@ -12,12 +12,18 @@ class MU extends Base {
     },
     graphql = "http://localhost:1984/graphql",
     cu = "http://localhost:1987",
+    cus = {
+      "http://localhost:1996": "http://localhost:1997",
+      "http://localhost:1986": "http://localhost:1987",
+      "http://localhost:1976": "http://localhost:1977",
+    },
     wallet,
     protocol,
     variant,
   }) {
     super({
       cu,
+      cus,
       port,
       arweave,
       graphql,
@@ -74,7 +80,7 @@ class MU extends Base {
       res.json({ id: item.id })
     } else {
       const to = setTimeout(() => this.bad_request(res), 3000)
-      new CU({ url: this.cu })
+      new CU({ url: this.cus[url] ?? this.cu })
         .result(item.id, item.target)
         .then(async json => {
           clearTimeout(to)

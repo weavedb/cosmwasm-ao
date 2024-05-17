@@ -51,6 +51,7 @@ const start = async (
     mu: "http://localhost:1995",
     su: "http://localhost:1996",
     cu: "http://localhost:1997",
+    cus: { "http://localhost:1996": "http://localhost:1997" },
     arweave: network,
     graphql: "http://localhost:1994/graphql",
   }
