@@ -146,7 +146,8 @@ class CU extends Base {
     } else if (tags.action === "reply") {
       res = this.vms[pid].reply(input)
     } else {
-      res = this.vms[pid].execute(v.node.owner.address, tags.action, input)
+      let caller = tags.from_process ?? v.node.owner.address
+      res = this.vms[pid].execute(caller, tags.action, input)
     }
     this.results[pid][id] = res.json
   }
