@@ -182,7 +182,7 @@ class CUWDB extends CU {
       res = { ok: await this.vms[pid].read(input) }
     } else {
       let caller = v.node.owner.address
-      if (!isNil(input["From-Process"])) caller = input["From-Process"]
+      if (!isNil(tags.from_process)) caller = tags.from_process
       res = await this.vms[pid]._writeContract(
         input.function,
         input,
