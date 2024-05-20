@@ -74,7 +74,7 @@ class CUWDB extends CU {
       const pid = req.params["process"]
       if (!this.hashes[pid]) return this.bad_request(res)
       const { path, doc, collection } = req.query
-      const col_id = this.cols[pid]["ppl"]
+      const col_id = this.cols[pid][collection]
       const data = await this.vms[pid].read({
         function: "get",
         query: [collection, doc],
