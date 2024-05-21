@@ -1,6 +1,6 @@
 {
   "name": "cwao-units",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
@@ -18,8 +18,8 @@
     "cwao": "^0.5.5",
     "express": "^4.18.2",
     "ramda": "^0.29.1",
-    "weavedb-node-client": "^0.41.0",
-    "weavedb-offchain": "^0.41.0",
+    "weavedb-node-client": "^0.42.0",
+    "weavedb-offchain": "^0.42.0",
     "zkjson": "^0.1.34"
   },
   "devDependencies": {
