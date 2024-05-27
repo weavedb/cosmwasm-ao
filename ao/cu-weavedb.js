@@ -38,8 +38,10 @@ class CUWDB extends CU {
     this.hashes = {}
     this.wasmRU = params.wasmRU
     this.zkeyRU = params.zkeyRU
+    this.zk_error = false
     this.wasm = params.wasm
     this.zkey = params.zkey
+    this.col_idmap = {}
   }
 
   init() {
@@ -57,6 +59,7 @@ class CUWDB extends CU {
   }
 
   async get_hash(req, res) {
+    if (this.zk_error) return this.bad_request(res)
     try {
       const pid = req.params["process"]
       if (!this.hashes[pid]) return this.bad_request(res)
@@ -70,15 +73,18 @@ class CUWDB extends CU {
   }
 
   async get_zkjson(req, res) {
+    if (this.zk_error) return this.bad_request(res)
     try {
       const pid = req.params["process"]
       if (!this.hashes[pid]) return this.bad_request(res)
       const { path, doc, collection } = req.query
       const col_id = this.cols[pid][collection]
+      if (isNil(col_id)) return this.bad_request(res)
       const data = await this.vms[pid].read({
         function: "get",
         query: [collection, doc],
       })
+      if (isNil(data)) return this.bad_request(res)
       const zkp = await this.zkdbs[pid].genProof({
         json: data,
         col_id,
@@ -102,9 +108,9 @@ class CUWDB extends CU {
     this.cols[pr_id] = {}
     this.hashes[pr_id] = []
     this.zkdbs[pr_id] = new ZKDB({
-      level: 100,
-      size_path: 5,
-      size_val: 5,
+      level: 168,
+      size_path: 4,
+      size_val: 8,
       size_json: 256,
       size_txs: 10,
       level_col: 8,
@@ -142,8 +148,18 @@ class CUWDB extends CU {
           if (diff.length > 0) {
             for (const v of diff) {
               if (isNil(this.cols[pr_id][v.collection])) {
-                this.cols[pr_id][v.collection] =
-                  await this.zkdbs[pr_id].addCollection()
+                const col = await this.vms[pr_id].read({
+                  function: "getCollection",
+                  query: [v.collection],
+                })
+                if (isNil(col)) {
+                  console.log(`[critical error] ${v.collection} doesn't exist`)
+                  this.zk_error = true
+                } else {
+                  this.cols[pr_id][v.collection] = await this.zkdbs[
+                    pr_id
+                  ].addCollection(col.id)
+                }
               }
               const col_id = this.cols[pr_id][v.collection]
               const res = await this.zkdbs[pr_id].insert(col_id, v.doc, v.data)
