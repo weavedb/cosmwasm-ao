@@ -1,0 +1,17 @@
+{
+  "name": "cosmwasm-ao",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node scripts/start.js",
+    "keygen": "node scripts/keygen.js",
+    "accounts": "node scripts/accounts.js",
+    "addFund": "node scripts/addFund.js",
+    "addModule": "node scripts/addModule.js",
+    "setScheduler": "node scripts/setScheduler.js"
+  },
+  "dependencies": {
+    "eth-crypto": "^2.6.0",
+    "ramda": "^0.30.0",
+    "yargs": "^17.7.2"
+  }
+}
