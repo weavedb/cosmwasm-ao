@@ -2,9 +2,9 @@ const conf = require("../cwao.config.js")
 const { readFileSync } = require("fs")
 const { isNil, last } = require("ramda")
 const Arweave = require("arweave")
-const { CWAO } = require("../cwao-sdk")
-const { MU, SU } = require("../ao")
-const CU = require("../ao/cu-weavedb")
+const { CWAO } = require("cwao")
+const { MU, SU } = require("cwao-units")
+const CU = require("cwao-units/cu-weavedb")
 
 const {
   _: [name],

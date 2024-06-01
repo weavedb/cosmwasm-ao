@@ -10,6 +10,9 @@
     "setScheduler": "node scripts/setScheduler.js"
   },
   "dependencies": {
+    "arweave": "^1.15.1",
+    "cwao": "^0.5.5",
+    "cwao-units": "^0.7.0",
     "eth-crypto": "^2.6.0",
     "ramda": "^0.30.0",
     "yargs": "^17.7.2"
