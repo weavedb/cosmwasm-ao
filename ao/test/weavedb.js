@@ -9,7 +9,7 @@ describe("WeaveDB", function () {
 
   before(
     async () =>
-      ({ stop, wallet, arweave, base } = await start(undefined, "wdb")),
+      ({ stop, wallet, arweave, base } = await start(undefined, "weavedb")),
   )
   after(async () => await stop())
 

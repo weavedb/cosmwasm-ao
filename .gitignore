@@ -1,5 +1,6 @@
 .weavedb
 cwao.config.js
+cwao.config.*.js
 \*shell\*
 .db
 # Logs

@@ -1,13 +1,12 @@
-const conf = require("../cwao.config.js")
 const { readFileSync } = require("fs")
 const { isNil, last } = require("ramda")
 const Arweave = require("arweave")
 const { CWAO } = require("cwao")
 const { MU, SU } = require("cwao-units")
-const CU = require("cwao-units/cu-weavedb")
 
 const {
   _: [name],
+  config = "cwao.config.js",
 } = require("yargs")(process.argv.slice(2)).argv
 
 if (isNil(name)) {
@@ -21,6 +20,10 @@ const dir = resolve(__dirname, "../.weavedb/accounts")
 const dir_evm = resolve(__dirname, "../.weavedb/accounts/evm")
 const dir_ar = resolve(__dirname, "../.weavedb/accounts/ar")
 const t = "ar"
+const conf = require(`../${config}`)
+const CU = require(
+  `cwao-units/${conf.type === "weavedb" ? "cu-weavedb" : "cu"}`,
+)
 
 const main = async () => {
   const keyfile = resolve(dir, t, `${name}.json`)
