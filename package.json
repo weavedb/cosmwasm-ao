@@ -7,12 +7,13 @@
     "accounts": "node scripts/accounts.js",
     "addFund": "node scripts/addFund.js",
     "addModule": "node scripts/addModule.js",
-    "setScheduler": "node scripts/setScheduler.js"
+    "setScheduler": "node scripts/setScheduler.js",
+    "deployCWAO20": "node scripts/deployCWAO20.js"
   },
   "dependencies": {
     "arweave": "^1.15.1",
     "cwao": "^0.5.5",
-    "cwao-units": "^0.7.0",
+    "cwao-units": "^0.8.1",
     "eth-crypto": "^2.6.0",
     "ramda": "^0.30.0",
     "yargs": "^17.7.2"

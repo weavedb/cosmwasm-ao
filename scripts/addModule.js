@@ -1,4 +1,3 @@
-const conf = require("../cwao.config.js")
 const { readFileSync } = require("fs")
 const { isNil, last } = require("ramda")
 const { CWAO } = require("../cwao-sdk")
@@ -9,15 +8,21 @@ const { resolve } = require("path")
 
 const {
   _: [name],
+  config = "cwao.config.js",
+  type = "weavedb",
 } = require("yargs")(process.argv.slice(2)).argv
 
 if (isNil(name)) {
   console.error("account name missing")
   process.exit()
 }
+const conf = require(`../${config}`)
 
 const getModule = module_path =>
   readFileSync(resolve(__dirname, "./contract.js"))
+
+const getModuleCWAO20 = module_path =>
+  readFileSync(resolve(__dirname, "./contract.wasm"))
 
 const main = async () => {
   const wallet = getWallet(name)
@@ -25,7 +30,7 @@ const main = async () => {
     console.error(`account [${name}:ar] doesn't exist`)
     process.exit()
   }
-  const binary = getModule()
+  const binary = type === "cwao20" ? getModuleCWAO20() : getModule()
   const base = conf.ao
   const cwao = new CWAO({ wallet, ...base })
   const module = await cwao.deploy(binary)

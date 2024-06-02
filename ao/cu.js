@@ -83,9 +83,10 @@ class CU extends Base {
       this.sus[pid].ttl + this.sus[pid].checked >= Date.now()
     ) {
       this.sus[pid] ??= await this.gql.getSU({ process: pid })
-      this.sus[pid].checked = Date.now()
+      if (this.sus[pid]) this.sus[pid].checked = Date.now()
     }
     if (!this.sus[pid]) return
+    this.results[pid] ??= {}
     try {
       const res = await new SU({ url: this.sus[pid].url }).processes(pid)
       if (res.error) return { error: true }
@@ -103,7 +104,6 @@ class CU extends Base {
         input = JSON.parse(process.input)
       }
       this.vms[pid] = await this.getModule(process.module, pid, input)
-      this.results[pid] ??= {}
       await this._instantiate(pid, input)
     } catch (e) {
       console.log(e)
