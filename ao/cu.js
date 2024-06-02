@@ -83,7 +83,7 @@ class CU extends Base {
       this.sus[pid].ttl + this.sus[pid].checked >= Date.now()
     ) {
       this.sus[pid] ??= await this.gql.getSU({ process: pid })
-      if (this.sus[pid]) this.sus[pid].checked = Date.now()
+      if (!isNil(this.sus[pid])) this.sus[pid].checked = Date.now()
     }
     if (!this.sus[pid]) return
     this.results[pid] ??= {}
