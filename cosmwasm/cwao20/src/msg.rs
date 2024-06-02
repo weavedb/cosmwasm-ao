@@ -23,7 +23,7 @@ pub struct BalanceResp {
 
 #[derive(Serialize, Deserialize)]
 pub struct BalancesResp {
-    pub Balances: Vec<(Addr, u8)>,
+    pub Balances: Vec<(Addr, u128)>,
 }
 
 #[derive(Serialize, Deserialize)]

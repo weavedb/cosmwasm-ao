@@ -34,10 +34,10 @@ mod query {
     }
 
     pub fn balances(deps: Deps) -> StdResult<BalancesResp> {
-	let balances: Vec<(Addr, u8)> = BALANCES
+	let balances: Vec<(Addr, u128)> = BALANCES
         .range(deps.storage, None, None, Order::Ascending)
         .map(|item| item.map(|(key, value)| (key, value)))
-        .collect::<StdResult<Vec<(Addr, u8)>>>()?;
+        .collect::<StdResult<Vec<(Addr, u128)>>>()?;
         let resp = BalancesResp { Balances: balances };
         Ok(resp)
     }
@@ -50,8 +50,8 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    let num_value: u8 = 0;
-    let denom: u8 = msg.Denomination.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
+    let num_value: u128 = 0;
+    let denom: u128 = msg.Denomination.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
     BALANCES.save(deps.storage, info.sender.clone(), &num_value)?;
     OWNER.save(deps.storage, &info.sender)?;
     NAME.save(deps.storage, &msg.Name)?;
@@ -83,28 +83,31 @@ mod exec {
 	if info.sender != owner {
             return Err(StdError::generic_err("unauthorized"));
 	}
-	let quantity: u8 = Quantity.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
-        BALANCES.update(deps.storage, info.sender, |balance| -> StdResult<u8> {
+	let quantity: u128 = Quantity.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
+        BALANCES.update(deps.storage, info.sender, |balance| -> StdResult<u128> {
 	    Ok(quantity + balance.unwrap_or_default())
 	})?;
         Ok(Response::new())
     }
 
     pub fn transfer(deps: DepsMut, info: MessageInfo, Recipient: Addr, Quantity: String) -> StdResult<Response> {
-	let quantity: u8 = Quantity.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
+	let quantity: u128 = Quantity.parse().map_err(|_| StdError::generic_err("Failed to parse num"))?;
 	let balance = BALANCES.may_load(deps.storage, info.sender.clone()).
 	    unwrap_or_default().
 	    unwrap_or(0);
 	if balance < quantity {
 	    return Err(StdError::generic_err("not enough balance"));
 	}
-        BALANCES.update(deps.storage, info.sender.clone(), |balance| -> StdResult<u8> {
+        BALANCES.update(deps.storage, info.sender.clone(), |balance| -> StdResult<u128> {
 	    Ok(balance.unwrap_or_default() - quantity)
 	})?;
-	BALANCES.update(deps.storage, Recipient.clone(), |balance| -> StdResult<u8> {
+	BALANCES.update(deps.storage, Recipient.clone(), |balance| -> StdResult<u128> {
 	    Ok(balance.unwrap_or_default() + quantity)
 	})?;
-	Ok(Response::new().add_events(vec![Event::new("ao_message").add_attribute("Action", "Credit-Notice").add_attribute("Sender", info.sender.to_string()).add_attribute("Quantity", Quantity).add_attribute("Target", Recipient.to_string())]))
+	Ok(Response::new().add_events(vec![
+	    Event::new("ao_message").add_attribute("Action", "Credit-Notice").add_attribute("Sender", info.sender.to_string()).add_attribute("Quantity", Quantity.clone()).add_attribute("Target", Recipient.to_string()),
+	    Event::new("ao_message").add_attribute("Action", "Debit-Notice").add_attribute("Target", info.sender.to_string()).add_attribute("Quantity", Quantity).add_attribute("Recipient", Recipient.to_string())
+	]))
     }
     
 }
