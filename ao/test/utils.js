@@ -33,13 +33,13 @@ const getModule = async module_path =>
 const start = async (
   network = {
     host: "localhost",
-    port: 1994,
+    port: 1794,
     protocol: "http",
   },
   type,
 ) => {
   const arweave = Arweave.init(network)
-  const arLocal = new ArLocal(1994, false)
+  const arLocal = new ArLocal(1794, false)
   await arLocal.start()
 
   const wallet = await arweave.wallets.generate()
@@ -48,17 +48,18 @@ const start = async (
   console.log(`[Wallet] ${addr}`)
 
   const base = {
-    mu: "http://localhost:1995",
-    su: "http://localhost:1996",
-    cu: "http://localhost:1997",
-    cus: { "http://localhost:1996": "http://localhost:1997" },
+    mu: "http://localhost:1795",
+    su: "http://localhost:1796",
+    cu: "http://localhost:1797",
+    cus: { "http://localhost:1796": "http://localhost:1797" },
     arweave: network,
-    graphql: "http://localhost:1994/graphql",
+    graphql: "http://localhost:1794/graphql",
+    type,
   }
-  const _CU = type === "wdb" ? CUWDB : CU
-  const mu = new MU({ wallet, port: 1995, ...base })
-  const su = new SU({ wallet, port: 1996, ...base })
-  const cu = new _CU({ wallet, port: 1997, ...base })
+  const _CU = type === "weavedb" ? CUWDB : CU
+  const mu = new MU({ wallet, port: 1795, ...base })
+  const su = new SU({ wallet, port: 1796, ...base })
+  const cu = new _CU({ wallet, port: 1797, ...base })
   const stop = async () => {
     await arLocal.stop()
     mu.stop()
