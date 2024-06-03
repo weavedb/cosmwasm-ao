@@ -22,7 +22,7 @@ const dir_ar = resolve(__dirname, "../.weavedb/accounts/ar")
 const t = "ar"
 const conf = require(`../${config}`)
 const CU = require(
-  `cwao-units/${conf.type === "weavedb" ? "cu-weavedb" : "cu"}`,
+  `cwao-units/${conf.ao.type === "weavedb" ? "cu-weavedb" : "cu"}`,
 )
 
 const main = async () => {
